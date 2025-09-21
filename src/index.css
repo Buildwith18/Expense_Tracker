@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optimized base font sizing for 100% zoom */
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Mobile devices */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Standard desktop (1366x768 and above) */
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1440px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Container width optimization */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+/* Ensure consistent spacing */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
+}
+
+/* Ensure all components inherit dark mode properly */
+.dark * {
+  border-color: rgb(55 65 81) !important;
+}
+
+.dark .bg-white {
+  @apply bg-gray-800 !important;
+}
+
+.dark .text-gray-900 {
+  @apply text-white !important;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-300 !important;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-400 !important;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700 !important;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-600 !important;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-700 !important;
+}
+
+.dark .bg-gray-100 {
+  @apply bg-gray-600 !important;
+}
