@@ -135,6 +135,11 @@ class RecurringExpense(models.Model):
     start_date = models.DateField(
         help_text='When this recurring expense starts'
     )
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='When this recurring expense ends (optional)'
+    )
     next_date = models.DateField(
         help_text='Next occurrence date'
     )

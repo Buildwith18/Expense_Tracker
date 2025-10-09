@@ -18,4 +18,6 @@ urlpatterns = [
     path('settings/', views.user_settings, name='user_settings'),
     path('update-settings/', views.update_settings, name='update_settings'),
     path('change-password/', views.change_password, name='change_password'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('reset-password/', views.reset_password, name='reset_password'),
 ]

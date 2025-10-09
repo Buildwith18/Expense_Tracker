@@ -14,7 +14,7 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
         model = RecurringExpense
         fields = [
             'id', 'user', 'title', 'amount', 'category', 'frequency',
-            'start_date', 'next_date', 'is_active', 'description',
+            'start_date', 'end_date', 'next_date', 'is_active', 'description',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
@@ -30,6 +30,16 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Title cannot be empty.")
         return value.strip()
+
+    def validate(self, data):
+        """Validate start_date and end_date"""
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        if end_date and start_date and end_date <= start_date:
+            raise serializers.ValidationError("End date must be after start date.")
+        
+        return data
 
     def create(self, validated_data):
         """Create recurring expense and set next_date if not provided"""

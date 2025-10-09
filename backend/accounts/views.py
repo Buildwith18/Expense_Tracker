@@ -1,3 +1,8 @@
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
 from django.db import models
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
@@ -13,10 +18,6 @@ from .serializers import (
     ChangePasswordSerializer
 )
 from django.db.models import Sum, Q
-from django.utils import timezone
-from datetime import datetime, timedelta
-from .models import User
-from .serializers import UserSerializer, UserProfileSerializer
 from expenses.models import Expense
 from expenses.serializers import ExpenseSerializer
 
@@ -264,6 +265,87 @@ def change_password(request):
     return Response({
         'message': 'Password changed successfully'
     })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    """Send password reset email"""
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({
+            'error': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(email=email)
+        
+        # Generate reset token
+        reset_token = get_random_string(32)
+        user.reset_token = reset_token
+        user.reset_token_expires = timezone.now() + timedelta(hours=1)  # Token expires in 1 hour
+        user.save()
+        
+        # Send email (in production, you'd use a proper email service)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+        
+        # For development, we'll just return the reset link
+        # In production, you'd send an actual email
+        return Response({
+            'message': 'Password reset link sent to your email',
+            'reset_link': reset_link,  # Remove this in production
+            'token': reset_token  # Remove this in production
+        })
+        
+    except User.DoesNotExist:
+        # Don't reveal if email exists or not for security
+        return Response({
+            'message': 'If the email exists, a password reset link has been sent'
+        })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    """Reset password using token"""
+    token = request.data.get('token')
+    new_password = request.data.get('new_password')
+    confirm_password = request.data.get('confirm_password')
+    
+    if not token or not new_password or not confirm_password:
+        return Response({
+            'error': 'Token, new password, and confirmation are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if new_password != confirm_password:
+        return Response({
+            'error': 'New passwords do not match'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(reset_token=token)
+        
+        # Check if token is expired
+        if user.reset_token_expires < timezone.now():
+            return Response({
+                'error': 'Reset token has expired'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Reset password
+        user.set_password(new_password)
+        user.reset_token = None
+        user.reset_token_expires = None
+        user.save()
+        
+        return Response({
+            'message': 'Password reset successfully'
+        })
+        
+    except User.DoesNotExist:
+        return Response({
+            'error': 'Invalid reset token'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

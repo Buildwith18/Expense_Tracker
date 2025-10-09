@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { userApi } from '../../services/api';
-import { Lock, Eye, EyeOff, Save } from 'lucide-react';
+import { Lock, Eye, EyeOff, Save, Mail, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PasswordTab: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -15,11 +16,33 @@ const PasswordTab: React.FC = () => {
     newPassword: '',
     confirmPassword: '',
   });
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    email: '',
+    token: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
+  };
+
+  const handleForgotPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForgotPasswordData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -113,6 +136,72 @@ const PasswordTab: React.FC = () => {
   };
 
   const passwordStrength = getPasswordStrength(passwordData.newPassword);
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordData.email) {
+      setErrors({ email: 'Email is required' });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const result = await userApi.forgotPassword(forgotPasswordData.email);
+      
+      // Show the reset link in development mode
+      if (result.reset_link) {
+        toast.success(`Reset link: ${result.reset_link}`, { duration: 10000 });
+      }
+      
+      setForgotPasswordData(prev => ({
+        ...prev,
+        email: '',
+      }));
+      
+    } catch (error) {
+      console.error('Forgot password failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordData.token || !forgotPasswordData.newPassword || !forgotPasswordData.confirmPassword) {
+      setErrors({ token: 'All fields are required' });
+      return;
+    }
+    
+    if (forgotPasswordData.newPassword !== forgotPasswordData.confirmPassword) {
+      setErrors({ confirmPassword: 'Passwords do not match' });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await userApi.resetPassword(
+        forgotPasswordData.token,
+        forgotPasswordData.newPassword,
+        forgotPasswordData.confirmPassword
+      );
+      
+      // Clear form and go back to change password
+      setForgotPasswordData({
+        email: '',
+        token: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setShowForgotPassword(false);
+      
+    } catch (error) {
+      console.error('Password reset failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -273,6 +362,179 @@ const PasswordTab: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Forgot Password Section */}
+      <div className="border-t pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Forgot Password?</h3>
+            <p className="text-sm text-gray-600">Reset your password using your email address.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(!showForgotPassword)}
+            className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            <Mail className="w-4 h-4" />
+            <span>{showForgotPassword ? 'Hide' : 'Show'} Reset Form</span>
+          </button>
+        </div>
+
+        {showForgotPassword && (
+          <div className="space-y-4">
+            {/* Email Input */}
+            <div>
+              <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="email"
+                  id="forgotEmail"
+                  name="email"
+                  value={forgotPasswordData.email}
+                  onChange={handleForgotPasswordChange}
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your email address"
+                />
+              </div>
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Token Input (for password reset) */}
+            {forgotPasswordData.email && (
+              <div>
+                <label htmlFor="resetToken" className="block text-sm font-medium text-gray-700 mb-1">
+                  Reset Token
+                </label>
+                <input
+                  type="text"
+                  id="resetToken"
+                  name="token"
+                  value={forgotPasswordData.token}
+                  onChange={handleForgotPasswordChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.token ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter reset token from email"
+                />
+                {errors.token && (
+                  <p className="mt-1 text-sm text-red-600">{errors.token}</p>
+                )}
+              </div>
+            )}
+
+            {/* New Password Fields (for password reset) */}
+            {forgotPasswordData.token && (
+              <>
+                <div>
+                  <label htmlFor="resetNewPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="password"
+                      id="resetNewPassword"
+                      name="newPassword"
+                      value={forgotPasswordData.newPassword}
+                      onChange={handleForgotPasswordChange}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.newPassword ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  {errors.newPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="resetConfirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="password"
+                      id="resetConfirmPassword"
+                      name="confirmPassword"
+                      value={forgotPasswordData.confirmPassword}
+                      onChange={handleForgotPasswordChange}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              {!forgotPasswordData.email ? (
+                <button
+                  type="button"
+                  onClick={handleForgotPasswordSubmit}
+                  disabled={isLoading || !forgotPasswordData.email}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Send Reset Link</span>
+                </button>
+              ) : !forgotPasswordData.token ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // In development, show the token in console
+                    console.log('Check the toast message for the reset link and token');
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <span>Check Email for Token</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResetPasswordSubmit}
+                  disabled={isLoading || !forgotPasswordData.newPassword || !forgotPasswordData.confirmPassword}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Reset Password</span>
+                </button>
+              )}
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotPasswordData({
+                    email: '',
+                    token: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                  });
+                  setErrors({});
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

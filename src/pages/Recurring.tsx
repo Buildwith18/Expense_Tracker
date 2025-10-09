@@ -11,9 +11,12 @@ interface RecurringExpense {
   title: string;
   amount: number;
   category: string;
-  frequency: 'daily' | 'weekly' | 'monthly';
-  nextDate: string;
-  isActive: boolean;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  start_date: string;
+  end_date?: string;
+  next_date: string;
+  is_active: boolean;
+  description?: string;
 }
 
 const Recurring: React.FC = () => {
@@ -28,14 +31,17 @@ const Recurring: React.FC = () => {
     amount: '',
     category: '',
     frequency: 'monthly' as const,
-    startDate: new Date().toISOString().split('T')[0]
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: '',
+    description: ''
   });
 
   const categories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Other'];
   const frequencies = [
     { value: 'daily', label: 'Daily' },
     { value: 'weekly', label: 'Weekly' },
-    { value: 'monthly', label: 'Monthly' }
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'yearly', label: 'Yearly' }
   ];
 
   useEffect(() => {
@@ -84,10 +90,11 @@ const Recurring: React.FC = () => {
       amount: parseFloat(formData.amount),
       category: formData.category.toLowerCase(),
       frequency: formData.frequency,
-      start_date: formData.startDate,
-      next_date: formData.startDate,
+      start_date: formData.start_date,
+      end_date: formData.end_date || null,
+      next_date: formData.start_date,
       is_active: true,
-      description: ''
+      description: formData.description
     };
 
     if (editingRecurring) {
@@ -131,7 +138,9 @@ const Recurring: React.FC = () => {
       amount: '',
       category: '',
       frequency: 'monthly',
-      startDate: new Date().toISOString().split('T')[0]
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: '',
+      description: ''
     });
     setShowAddForm(false);
     setEditingRecurring(null);
@@ -144,7 +153,9 @@ const Recurring: React.FC = () => {
       amount: recurring.amount.toString(),
       category: recurring.category,
       frequency: recurring.frequency,
-      startDate: recurring.start_date
+      start_date: recurring.start_date,
+      end_date: recurring.end_date || '',
+      description: recurring.description || ''
     });
     setShowAddForm(true);
   };
@@ -208,13 +219,29 @@ const Recurring: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">Recurring Expenses</h1>
             <p className="text-gray-600 mt-1">Manage your recurring transactions and subscriptions</p>
           </div>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Recurring</span>
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={async () => {
+                try {
+                  await recurringApi.generateRecurringExpenses();
+                  await fetchRecurringExpenses();
+                } catch (error) {
+                  console.error('Failed to generate expenses:', error);
+                }
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Generate Expenses</span>
+            </button>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Recurring</span>
+            </button>
+          </div>
         </div>
 
         {/* Add Form Modal */}
@@ -290,11 +317,36 @@ const Recurring: React.FC = () => {
                     <input
                       type="date"
                       required
-                      value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      title="Select start date for recurring expense"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date (Optional)</label>
+                  <input
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Leave empty for indefinite"
+                    title="Select end date for recurring expense"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty if this is an ongoing subscription</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Add any additional details..."
+                  />
                 </div>
 
                 <div className="flex space-x-3 pt-4">
@@ -356,12 +408,20 @@ const Recurring: React.FC = () => {
                           <Calendar className="w-4 h-4 mr-1" />
                           <span>Next: {new Date(expense.next_date).toLocaleDateString()}</span>
                         </div>
+                        {expense.end_date && (
+                          <span className="text-gray-500">
+                            Ends: {new Date(expense.end_date).toLocaleDateString()}
+                          </span>
+                        )}
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           expense.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                         }`}>
                           {expense.is_active ? 'Active' : 'Paused'}
                         </span>
                       </div>
+                      {expense.description && (
+                        <p className="text-sm text-gray-600 mt-2">{expense.description}</p>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-2">

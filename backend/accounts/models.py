@@ -60,6 +60,17 @@ class User(AbstractUser):
         default=True,
         help_text='Enable budget alerts'
     )
+    reset_token = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        help_text='Password reset token'
+    )
+    reset_token_expires = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Password reset token expiration'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

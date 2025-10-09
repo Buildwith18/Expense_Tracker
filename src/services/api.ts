@@ -9,8 +9,9 @@ interface RecurringExpense {
   title: string;
   amount: number;
   category: string;
-  frequency: 'daily' | 'weekly' | 'monthly';
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   start_date: string;
+  end_date?: string;
   next_date: string;
   is_active: boolean;
   description?: string;
@@ -209,6 +210,67 @@ export const expenseApi = {
       throw error;
     }
   },
+
+  // Get expenses grouped by month
+  getExpensesGroupedByMonth: async (year?: number, month?: number) => {
+    try {
+      if (await isBackendAvailable()) {
+        const params: any = {};
+        if (year) params.year = year;
+        if (month) params.month = month;
+        const response = await api.get('/expenses/monthly_grouped/', { params });
+        return response.data;
+      } else {
+        // Fallback: group mock data by month
+        let expenses = getMockExpenses();
+        
+        // Filter by year/month if specified
+        if (year) {
+          expenses = expenses.filter(e => new Date(e.date).getFullYear() === year);
+        }
+        if (month) {
+          expenses = expenses.filter(e => new Date(e.date).getMonth() + 1 === month);
+        }
+        
+        // Group by month
+        const grouped = expenses.reduce((acc, expense) => {
+          const date = new Date(expense.date);
+          const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+          
+          if (!acc[yearMonth]) {
+            acc[yearMonth] = {
+              year_month: yearMonth,
+              year: date.getFullYear(),
+              month: date.getMonth() + 1,
+              month_name: date.toLocaleString('default', { month: 'long' }),
+              expenses: [],
+              total_amount: 0,
+              expense_count: 0
+            };
+          }
+          
+          acc[yearMonth].expenses.push(expense);
+          acc[yearMonth].total_amount += expense.amount;
+          acc[yearMonth].expense_count += 1;
+          
+          return acc;
+        }, {} as Record<string, any>);
+        
+        // Convert to array and sort by date (newest first)
+        const result = Object.values(grouped).sort((a: any, b: any) => 
+          b.year_month.localeCompare(a.year_month)
+        );
+        
+        return {
+          grouped_expenses: result,
+          total_months: result.length
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch grouped expenses:', error);
+      throw error;
+    }
+  },
 };
 
 export const userApi = {
@@ -299,6 +361,52 @@ export const userApi = {
       } else {
         toast.error('Failed to change password');
       }
+      throw error;
+    }
+  },
+
+  // Forgot password
+  forgotPassword: async (email: string): Promise<{ message: string; reset_link?: string; token?: string }> => {
+    try {
+      if (await isBackendAvailable()) {
+        const response = await api.post('/forgot-password/', { email });
+        toast.success('Password reset link sent to your email!');
+        return response.data;
+      } else {
+        // Mock implementation for offline mode
+        toast.success('Password reset link sent! (Offline mode)');
+        return {
+          message: 'Password reset link sent to your email',
+          reset_link: 'http://localhost:3000/reset-password?token=mock-token',
+          token: 'mock-token'
+        };
+      }
+    } catch (error: any) {
+      console.error('Failed to send password reset:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to send password reset';
+      toast.error(errorMessage);
+      throw error;
+    }
+  },
+
+  // Reset password
+  resetPassword: async (token: string, newPassword: string, confirmPassword: string): Promise<void> => {
+    try {
+      if (await isBackendAvailable()) {
+        await api.post('/reset-password/', {
+          token,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        });
+        toast.success('Password reset successfully!');
+      } else {
+        // Mock implementation for offline mode
+        toast.success('Password reset successfully! (Offline mode)');
+      }
+    } catch (error: any) {
+      console.error('Failed to reset password:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to reset password';
+      toast.error(errorMessage);
       throw error;
     }
   },
@@ -559,6 +667,83 @@ export const recurringApi = {
       throw error;
     }
   },
+
+  // Generate recurring expenses for current month
+  generateRecurringExpenses: async (): Promise<{ generated_count: number }> => {
+    try {
+      if (await isBackendAvailable()) {
+        const response = await api.post('/recurring/generate_all_recurring_expenses/');
+        toast.success(`Generated ${response.data.generated_count} recurring expenses!`);
+        return response.data;
+      } else {
+        // Mock implementation for offline mode
+        const stored = localStorage.getItem('recurring_expenses');
+        const recurring = stored ? JSON.parse(stored) : [];
+        
+        const activeRecurring = recurring.filter((r: RecurringExpense) => r.is_active);
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        
+        let generatedCount = 0;
+        const expenses = getMockExpenses();
+        
+        activeRecurring.forEach((recurring: RecurringExpense) => {
+          const startDate = new Date(recurring.start_date);
+          const endDate = recurring.end_date ? new Date(recurring.end_date) : null;
+          
+          // Generate expenses for current month
+          const currentDate = new Date(Math.max(startDate.getTime(), new Date(currentYear, currentMonth, 1).getTime()));
+          const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+          
+          while (currentDate <= monthEnd) {
+            if (endDate && currentDate > endDate) break;
+            
+            // Check if expense already exists
+            const existingExpense = expenses.find(exp => 
+              exp.title === `${recurring.title} (Auto-generated)` &&
+              new Date(exp.date).getTime() === currentDate.getTime()
+            );
+            
+            if (!existingExpense) {
+              const newExpense: Expense = {
+                id: Date.now().toString() + Math.random(),
+                title: `${recurring.title} (Auto-generated)`,
+                amount: recurring.amount,
+                category: recurring.category,
+                date: currentDate.toISOString().split('T')[0],
+                description: `Auto-generated from recurring expense: ${recurring.description || ''}`,
+                userId: '1',
+                createdAt: new Date().toISOString(),
+              };
+              
+              expenses.push(newExpense);
+              generatedCount++;
+            }
+            
+            // Move to next occurrence
+            if (recurring.frequency === 'daily') {
+              currentDate.setDate(currentDate.getDate() + 1);
+            } else if (recurring.frequency === 'weekly') {
+              currentDate.setDate(currentDate.getDate() + 7);
+            } else if (recurring.frequency === 'monthly') {
+              currentDate.setMonth(currentDate.getMonth() + 1);
+            } else if (recurring.frequency === 'yearly') {
+              currentDate.setFullYear(currentDate.getFullYear() + 1);
+            }
+          }
+        });
+        
+        saveMockExpenses(expenses);
+        toast.success(`Generated ${generatedCount} recurring expenses!`);
+        return { generated_count: generatedCount };
+      }
+    } catch (error) {
+      console.error('Failed to generate recurring expenses:', error);
+      toast.error('Failed to generate recurring expenses');
+      throw error;
+    }
+  },
 };
 
 export const reportsApi = {
@@ -628,6 +813,78 @@ export const reportsApi = {
       }
     } catch (error) {
       console.error('Failed to fetch reports:', error);
+      throw error;
+    }
+  },
+
+  // Get spending trend data for charts
+  getSpendingTrend: async (viewType: 'monthly' | 'yearly' = 'monthly', months: number = 12): Promise<any> => {
+    try {
+      if (await isBackendAvailable()) {
+        const response = await api.get('/reports/spending_trend/', {
+          params: { view: viewType, months }
+        });
+        return response.data;
+      } else {
+        // Mock data for offline development
+        const mockData = viewType === 'monthly' ? [
+          { period: 'Jan 2024', amount: 1200, date: '2024-01-01' },
+          { period: 'Feb 2024', amount: 1500, date: '2024-02-01' },
+          { period: 'Mar 2024', amount: 1800, date: '2024-03-01' },
+          { period: 'Apr 2024', amount: 2000, date: '2024-04-01' },
+          { period: 'May 2024', amount: 2200, date: '2024-05-01' },
+          { period: 'Jun 2024', amount: 1900, date: '2024-06-01' },
+          { period: 'Jul 2024', amount: 2100, date: '2024-07-01' },
+          { period: 'Aug 2024', amount: 2400, date: '2024-08-01' },
+          { period: 'Sep 2024', amount: 1800, date: '2024-09-01' },
+          { period: 'Oct 2024', amount: 1600, date: '2024-10-01' },
+          { period: 'Nov 2024', amount: 2000, date: '2024-11-01' },
+          { period: 'Dec 2024', amount: 2500, date: '2024-12-01' }
+        ] : [
+          { period: '2022', amount: 18000, date: '2022-01-01' },
+          { period: '2023', amount: 22000, date: '2023-01-01' },
+          { period: '2024', amount: 25000, date: '2024-01-01' }
+        ];
+
+        return {
+          trend_data: mockData,
+          view_type: viewType,
+          total_periods: mockData.length
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch spending trend:', error);
+      throw error;
+    }
+  },
+
+  // Get category summary data for charts
+  getCategorySummary: async (startDate?: string, endDate?: string): Promise<any> => {
+    try {
+      if (await isBackendAvailable()) {
+        const params: any = {};
+        if (startDate) params.start_date = startDate;
+        if (endDate) params.end_date = endDate;
+        
+        const response = await api.get('/reports/category_summary/', { params });
+        return response.data;
+      } else {
+        // Mock data for offline development
+        return {
+          category_data: [
+            { category: 'Food', amount: 5000, percentage: 33.3, count: 15 },
+            { category: 'Transport', amount: 3000, percentage: 20.0, count: 8 },
+            { category: 'Entertainment', amount: 2000, percentage: 13.3, count: 5 },
+            { category: 'Utilities', amount: 2500, percentage: 16.7, count: 6 },
+            { category: 'Healthcare', amount: 1500, percentage: 10.0, count: 3 },
+            { category: 'Shopping', amount: 1000, percentage: 6.7, count: 4 }
+          ],
+          total_amount: 15000,
+          total_categories: 6
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch category summary:', error);
       throw error;
     }
   },

@@ -6,6 +6,7 @@ from django.db import models
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from .models import Expense, RecurringExpense
 from .serializers import (
     ExpenseSerializer, 
@@ -158,6 +159,120 @@ class ReportsView(generics.GenericAPIView):
                 'end': end_date.isoformat() if end_date else None
             }
         })
+
+    @action(detail=False, methods=['get'])
+    def spending_trend(self, request):
+        """Get spending trend data for charts"""
+        user = request.user
+        expenses = Expense.objects.filter(user=user)
+        
+        # Get view type (monthly or yearly)
+        view_type = request.query_params.get('view', 'monthly')
+        months_back = int(request.query_params.get('months', 12))
+        
+        today = timezone.now().date()
+        trend_data = []
+        
+        if view_type == 'monthly':
+            # Monthly trend data
+            for i in range(months_back):
+                if i == 0:
+                    month_start = today.replace(day=1)
+                    month_end = today
+                else:
+                    month_start = (today.replace(day=1) - relativedelta(months=i))
+                    month_end = (month_start + relativedelta(months=1) - timedelta(days=1))
+                
+                month_total = expenses.filter(
+                    date__gte=month_start,
+                    date__lte=month_end
+                ).aggregate(total=Sum('amount'))['total'] or 0
+                
+                trend_data.append({
+                    'period': month_start.strftime('%b %Y'),
+                    'amount': float(month_total),
+                    'date': month_start.isoformat()
+                })
+        
+        elif view_type == 'yearly':
+            # Yearly trend data
+            years_back = max(1, months_back // 12)
+            for i in range(years_back):
+                year_start = today.replace(month=1, day=1) - relativedelta(years=i)
+                year_end = year_start.replace(month=12, day=31)
+                
+                year_total = expenses.filter(
+                    date__gte=year_start,
+                    date__lte=year_end
+                ).aggregate(total=Sum('amount'))['total'] or 0
+                
+                trend_data.append({
+                    'period': year_start.strftime('%Y'),
+                    'amount': float(year_total),
+                    'date': year_start.isoformat()
+                })
+        
+        trend_data.reverse()  # Show oldest to newest
+        
+        return Response({
+            'trend_data': trend_data,
+            'view_type': view_type,
+            'total_periods': len(trend_data)
+        })
+
+    @action(detail=False, methods=['get'])
+    def category_summary(self, request):
+        """Get category summary data for charts"""
+        user = request.user
+        expenses = Expense.objects.filter(user=user)
+        
+        # Date filters
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                expenses = expenses.filter(date__gte=start_date)
+            except ValueError:
+                return Response({
+                    'error': 'Invalid start_date format. Use YYYY-MM-DD'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                expenses = expenses.filter(date__lte=end_date)
+            except ValueError:
+                return Response({
+                    'error': 'Invalid end_date format. Use YYYY-MM-DD'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Calculate category totals
+        category_data = []
+        total_amount = expenses.aggregate(total=Sum('amount'))['total'] or 0
+        
+        for choice in Expense.CATEGORY_CHOICES:
+            category_total = expenses.filter(category=choice[0]).aggregate(
+                total=Sum('amount')
+            )['total'] or 0
+            
+            if category_total > 0:
+                category_data.append({
+                    'category': choice[1],
+                    'amount': float(category_total),
+                    'percentage': (float(category_total) / float(total_amount)) * 100 if total_amount > 0 else 0,
+                    'count': expenses.filter(category=choice[0]).count()
+                })
+        
+        # Sort by amount descending
+        category_data.sort(key=lambda x: x['amount'], reverse=True)
+        
+        return Response({
+            'category_data': category_data,
+            'total_amount': float(total_amount),
+            'total_categories': len(category_data)
+        })
 class RecurringExpenseViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing recurring expenses
@@ -228,6 +343,12 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
         
         generated_count = 0
         for recurring in due_recurring:
+            # Check if we should stop generating (if end_date is set)
+            if recurring.end_date and recurring.next_date > recurring.end_date:
+                recurring.is_active = False
+                recurring.save()
+                continue
+            
             # Create expense from recurring
             Expense.objects.create(
                 user=recurring.user,
@@ -247,6 +368,80 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
             'message': f'Generated {generated_count} expenses from recurring expenses',
             'generated_count': generated_count
         })
+
+    @action(detail=False, methods=['post'])
+    def generate_all_recurring_expenses(self, request):
+        """Generate all recurring expenses for the current month"""
+        today = timezone.now().date()
+        current_month_start = today.replace(day=1)
+        current_month_end = (current_month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        
+        active_recurring = self.get_queryset().filter(
+            is_active=True,
+            start_date__lte=current_month_end
+        )
+        
+        generated_count = 0
+        for recurring in active_recurring:
+            # Generate expenses for each occurrence in the current month
+            current_date = max(recurring.start_date, current_month_start)
+            
+            while current_date <= current_month_end:
+                # Check if we should stop generating (if end_date is set)
+                if recurring.end_date and current_date > recurring.end_date:
+                    break
+                
+                # Check if this date matches the frequency
+                if self._should_generate_on_date(recurring, current_date):
+                    # Check if expense already exists for this date
+                    existing_expense = Expense.objects.filter(
+                        user=recurring.user,
+                        title=f"{recurring.title} (Auto-generated)",
+                        date=current_date
+                    ).exists()
+                    
+                    if not existing_expense:
+                        Expense.objects.create(
+                            user=recurring.user,
+                            title=f"{recurring.title} (Auto-generated)",
+                            amount=recurring.amount,
+                            category=recurring.category,
+                            date=current_date,
+                            description=f"Auto-generated from recurring expense: {recurring.description or ''}"
+                        )
+                        generated_count += 1
+                
+                # Move to next occurrence
+                current_date = self._get_next_occurrence_date(recurring, current_date)
+        
+        return Response({
+            'message': f'Generated {generated_count} recurring expenses for current month',
+            'generated_count': generated_count
+        })
+
+    def _should_generate_on_date(self, recurring, date):
+        """Check if a recurring expense should generate on a specific date"""
+        if recurring.frequency == 'daily':
+            return True
+        elif recurring.frequency == 'weekly':
+            return date.weekday() == recurring.start_date.weekday()
+        elif recurring.frequency == 'monthly':
+            return date.day == recurring.start_date.day
+        elif recurring.frequency == 'yearly':
+            return date.month == recurring.start_date.month and date.day == recurring.start_date.day
+        return False
+
+    def _get_next_occurrence_date(self, recurring, current_date):
+        """Get the next occurrence date for a recurring expense"""
+        if recurring.frequency == 'daily':
+            return current_date + timedelta(days=1)
+        elif recurring.frequency == 'weekly':
+            return current_date + timedelta(weeks=1)
+        elif recurring.frequency == 'monthly':
+            return current_date + relativedelta(months=1)
+        elif recurring.frequency == 'yearly':
+            return current_date + relativedelta(years=1)
+        return current_date
 class ExpensePagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
@@ -430,3 +625,69 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(expenses, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def monthly_grouped(self, request):
+        """
+        Get expenses grouped by month and year
+        """
+        expenses = self.get_queryset()
+        
+        # Optional filters
+        year = request.query_params.get('year')
+        month = request.query_params.get('month')
+        
+        if year:
+            try:
+                year_int = int(year)
+                expenses = expenses.filter(date__year=year_int)
+            except ValueError:
+                return Response({
+                    'error': 'Invalid year format. Use YYYY'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if month:
+            try:
+                month_int = int(month)
+                expenses = expenses.filter(date__month=month_int)
+            except ValueError:
+                return Response({
+                    'error': 'Invalid month format. Use MM (1-12)'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Group expenses by year and month
+        from django.db.models import Sum, Count
+        from collections import defaultdict
+        
+        # Get all expenses ordered by date
+        expenses_list = expenses.order_by('-date')
+        
+        # Group by year-month
+        grouped_expenses = defaultdict(lambda: {'expenses': [], 'total': 0, 'count': 0})
+        
+        for expense in expenses_list:
+            year_month = f"{expense.date.year}-{expense.date.month:02d}"
+            grouped_expenses[year_month]['expenses'].append(ExpenseSerializer(expense).data)
+            grouped_expenses[year_month]['total'] += float(expense.amount)
+            grouped_expenses[year_month]['count'] += 1
+        
+        # Convert to list format with proper month names
+        result = []
+        for year_month, data in sorted(grouped_expenses.items(), key=lambda x: x[0], reverse=True):
+            year, month = year_month.split('-')
+            month_name = datetime(int(year), int(month), 1).strftime('%B')
+            
+            result.append({
+                'year_month': year_month,
+                'year': int(year),
+                'month': int(month),
+                'month_name': month_name,
+                'expenses': data['expenses'],
+                'total_amount': data['total'],
+                'expense_count': data['count']
+            })
+        
+        return Response({
+            'grouped_expenses': result,
+            'total_months': len(result)
+        })

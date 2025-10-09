@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { expenseApi } from '../services/api';
+import { useExpenses } from '../context/ExpenseContext';
 import Layout from '../components/Layout/Layout';
-import { Plus, ArrowLeft } from 'lucide-react';
+import ExpenseItem from '../components/ExpenseItem';
+import { Plus, ArrowLeft, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
 
 const AddExpense: React.FC = () => {
   const navigate = useNavigate();
+  const { addExpense, expenses, isLoading, refreshExpenses } = useExpenses();
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -15,7 +17,7 @@ const AddExpense: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
     description: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const categories = [
@@ -38,24 +40,24 @@ const AddExpense: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError('');
 
     if (!formData.title.trim() || !formData.amount || !formData.category) {
       setError('Please fill in all required fields');
-      setIsLoading(false);
+      setIsSubmitting(false);
       return;
     }
 
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
       setError('Please enter a valid amount');
-      setIsLoading(false);
+      setIsSubmitting(false);
       return;
     }
 
     try {
-      await expenseApi.createExpense({
+      await addExpense({
         title: formData.title.trim(),
         amount,
         category: formData.category,
@@ -63,12 +65,18 @@ const AddExpense: React.FC = () => {
         description: formData.description.trim(),
       });
 
-      toast.success('Expense added successfully!');
-      navigate('/dashboard');
+      // Reset form after successful submission
+      setFormData({
+        title: '',
+        amount: '',
+        category: '',
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+      });
     } catch (err) {
       setError('Failed to create expense. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -194,10 +202,10 @@ const AddExpense: React.FC = () => {
               <div className="flex space-x-4">
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   className="flex-1 flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isLoading ? (
+                  {isSubmitting ? (
                     <div className="flex items-center">
                       <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                       Adding...
@@ -215,6 +223,48 @@ const AddExpense: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Recent Expenses Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Recent Expenses</h3>
+              <button
+                onClick={refreshExpenses}
+                disabled={isLoading}
+                className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading expenses...</p>
+              </div>
+            ) : expenses.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">No expenses yet. Add your first expense above!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {expenses.slice(0, 10).map((expense) => (
+                  <ExpenseItem key={expense.id} expense={expense} />
+                ))}
+                {expenses.length > 10 && (
+                  <div className="text-center py-4">
+                    <button
+                      onClick={() => navigate('/history')}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      View all {expenses.length} expenses →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
