@@ -1,12 +1,24 @@
-# Expense Tracker
+<div align="center">
 
-## Expense Tracker — Smart Personal Finance Dashboard for Managing & Visualizing Expenses
+# Expense Tracker — Smart Personal Finance Dashboard for Managing & Visualizing Expenses
 
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Python](https://img.shields.io/badge/Python-3.13-blue)
-![Django](https://img.shields.io/badge/Django-4.2-darkgreen)
-![React](https://img.shields.io/badge/React-18-61DAFB)
-![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)
+<a href="#license">
+  <img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-blue.svg">
+</a>
+<a href="https://www.python.org/" target="_blank">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.13-blue">
+</a>
+<a href="https://www.djangoproject.com/" target="_blank">
+  <img alt="Django" src="https://img.shields.io/badge/Django-4.2-darkgreen">
+</a>
+<a href="https://react.dev/" target="_blank">
+  <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB">
+</a>
+<a href="#">
+  <img alt="Build" src="https://img.shields.io/badge/build-passing-brightgreen">
+</a>
+
+</div>
 
 ### Friendly, data‑driven expense tracking with analytics, budgets, recurring payments, and rich visualizations.
 
@@ -104,11 +116,24 @@ With a clean UI, fast search, and actionable charts, Expense Tracker makes daily
 
 ```mermaid
 flowchart LR
-  A[React + Vite (Frontend)] -- Axios/JSON --> B[(Django REST API)]
-  B -- ORM --> C[(Database: SQLite / Postgres / MySQL)]
-  A --> D[Recharts Visualizations]
-  A --> E[Tailwind UI]
-  B --> F[JWT Auth]
+  subgraph Frontend
+    A[React + Vite]
+    D[Recharts]
+    E[Tailwind]
+  end
+
+  subgraph Backend
+    B[Django REST API]
+    F[JWT Auth]
+  end
+
+  C[(Database: SQLite / Postgres / MySQL)]
+
+  A -->|Axios / JSON| B
+  B -->|ORM| C
+  A --> D
+  A --> E
+  B --> F
 ```
 
 - **Frontend** handles UI, routing, and data fetching via Axios
@@ -207,7 +232,7 @@ This project is licensed under the **Apache License 2.0**. See the [`LICENSE`](L
 ## Contact
 
 - **Author**: Buildwith.18
-- **GitHub**: [github.com/your-username](https://github.com/Buildwith18)
-- **Email**: buildwith.18@gmail.com
+- **GitHub**: [github.com/Buildwith18](https://github.com/Buildwith18)
+- **Email**: [buildwith.18@gmail.com](mailto:buildwith.18@gmail.com)
 
 If you find this useful, consider starring the repo. Thanks!
