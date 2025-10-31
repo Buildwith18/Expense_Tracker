@@ -206,8 +206,8 @@ This project is licensed under the **Apache License 2.0**. See the [`LICENSE`](L
 
 ## Contact
 
-- **Author**: Buildwith.18
-- **GitHub**: [github.com/your-username](https://github.com/Buildwith18)
+- **Author**: Buildwith18
+- **GitHub**: [github.com/Buildwith18](https://github.com/Buildwith18)
 - **Email**: buildwith.18@gmail.com
 
 If you find this useful, consider starring the repo. Thanks!
