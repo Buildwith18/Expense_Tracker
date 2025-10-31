@@ -1,342 +1,213 @@
 # Expense Tracker
 
-A comprehensive personal finance management application built with React and Django, featuring Indian currency support, budget tracking, and recurring expense management.
-
-## Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [API Documentation](#api-documentation)
-- [Screenshots](#screenshots)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Features
-
-### Core Functionality
-
-- **User Authentication**: Secure JWT-based authentication with registration and login
-- **Expense Management**: Add, edit, delete, and categorize expenses
-- **Budget Tracking**: Set monthly budgets with real-time progress monitoring
-- **Recurring Expenses**: Automate recurring payments with flexible scheduling
-- **Indian Currency Support**: Native support for Indian Rupee (₹) with proper formatting
-- **Data Export**: Export expense data to CSV format
-- **Responsive Design**: Mobile-first design that works on all devices
-
-### Advanced Features
-
-- **Real-time Analytics**: Interactive charts and visualizations
-- **Category Management**: Organize expenses by custom categories
-- **Search & Filter**: Find expenses quickly with advanced filtering
-- **Dark Mode**: Toggle between light and dark themes
-- **Budget Alerts**: Get notified when approaching budget limits
-- **Demo Account**: Test the application with pre-configured demo data
-
-## Tech Stack
-
-### Frontend
-
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **Tailwind CSS** for styling
-- **React Router** for navigation
-- **Recharts** for data visualization
-- **React Hot Toast** for notifications
-- **Lucide React** for icons
-
-### Backend
-
-- **Django 4.2** with Django REST Framework
-- **MySQL** database (SQLite for development)
-- **JWT Authentication** with SimpleJWT
-- **CORS** support for cross-origin requests
-- **Python Decouple** for environment management
-
-## Quick Start
-
-### Option 1: Frontend Only (Demo Mode)
-
-Perfect for testing without backend setup:
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Open http://localhost:5173
-```
-
-### Option 2: Full Stack Setup
-
-For complete functionality with backend:
-
-```bash
-# Frontend
-npm install
-npm run dev
-
-# Backend (in separate terminal)
-cd backend
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-## Installation
-
-### Prerequisites
-
-- Node.js v16 or higher
-- Python 3.8 or higher
-- MySQL (optional - SQLite works for development)
-
-### Step 1: Clone Repository
-
-```bash
-git clone <repository-url>
-cd expense-tracker
-```
-
-### Step 2: Frontend Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-### Step 3: Backend Setup
-
-```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run migrations
-python manage.py makemigrations
-python manage.py migrate
-
-# Create superuser (optional)
-python manage.py createsuperuser
-
-# Start server
-python manage.py runserver
-```
-
-## Configuration
-
-### Environment Variables
-
-Create `backend/.env` file:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-DB_NAME=expense_tracker
-DB_USER=root
-DB_PASSWORD=your_password
-DB_HOST=localhost
-DB_PORT=3306
-```
-
-### Database Configuration
-
-The application supports both SQLite (default) and MySQL:
-
-**SQLite (Default)**
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-```
-
-**MySQL**
-
-```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME', default='expense_tracker'),
-        'USER': config('DB_USER', default='root'),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='3306'),
-    }
-}
-```
-
-## Usage
-
-### Demo Account
-
-- **Email**: `demo@example.com`
-- **Password**: `demo123`
-
-### Getting Started
-
-1. **Sign Up**: Create a new account or use the demo account
-2. **Set Budget**: Go to Settings → Budget to set your monthly budget
-3. **Add Expenses**: Use the dashboard or Add Expense page to record spending
-4. **Track Progress**: Monitor your budget progress on the dashboard
-5. **View Reports**: Check detailed analytics in the Reports section
-
-### Key Features
-
-#### Budget Management
-
-- Set monthly budget limits
-- Real-time progress tracking
-- Configurable alert thresholds
-- Daily average spending calculations
-
-#### Recurring Expenses
-
-- Create recurring expenses (daily, weekly, monthly, yearly)
-- Automatic expense generation
-- Pause/resume functionality
-- Next occurrence tracking
-
-#### Indian Currency Support
-
-- Native ₹ symbol support
-- Indian numbering system (1,00,000 format)
-- Proper decimal handling
-- Currency formatting utilities
-
-## API Documentation
-
-### Authentication Endpoints
-
-- `POST /api/register/` - User registration
-- `POST /api/token/` - JWT token generation
-- `POST /api/token/refresh/` - Token refresh
-
-### User Management
-
-- `GET /api/profile/` - Get user profile
-- `PUT /api/profile/` - Update profile
-- `GET /api/budget/` - Get budget information
-- `PUT /api/budget/` - Update budget settings
-
-### Expense Management
-
-- `GET /api/expenses/` - List expenses
-- `POST /api/expenses/` - Create expense
-- `PUT /api/expenses/{id}/` - Update expense
-- `DELETE /api/expenses/{id}/` - Delete expense
-- `GET /api/expenses/stats/` - Get statistics
-
-### Recurring Expenses
-
-- `GET /api/recurring/` - List recurring expenses
-- `POST /api/recurring/` - Create recurring expense
-- `PUT /api/recurring/{id}/` - Update recurring expense
-- `DELETE /api/recurring/{id}/` - Delete recurring expense
-- `POST /api/recurring/{id}/toggle_active/` - Toggle active status
-- `POST /api/recurring/generate_expenses/` - Generate expenses
-
-### Reports
-
-- `GET /api/reports/` - Get expense reports
-- `GET /api/notifications/` - Get notifications
-
-## Screenshots
-
-### Dashboard Overview
-
-![Dashboard](screenshots/dashboard.png)
-_Main dashboard showing expense summary, budget progress, and quick actions_
-
-### Expense Management
-
-![Add Expense](screenshots/add-expense.png)
-_Add new expenses with category selection and detailed information_
-
-### Budget Tracking
-
-![Budget Tracking](screenshots/budget-tracking.png)
-_Real-time budget monitoring with progress indicators and alerts_
-
-### Reports & Analytics
-
-![Reports](screenshots/reports.png)
-_Comprehensive analytics with charts and spending trends_
-
-### Recurring Expenses
-
-![Recurring Expenses](screenshots/recurring.png)
-_Manage recurring expenses with flexible scheduling options_
-
-### Settings
-
-![Settings](screenshots/settings.png)
-_User preferences, budget configuration, and account settings_
-
-### Mobile View
-
-![Mobile Dashboard](screenshots/mobile-dashboard.png)
-_Responsive design optimized for mobile devices_
-
-## Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Add tests for new features
-- Update documentation as needed
-- Ensure responsive design compatibility
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-If you encounter any issues or have questions:
-
-1. Check the [troubleshooting guide](SETUP_GUIDE.md#troubleshooting)
-2. Review the browser console for errors
-3. Ensure all dependencies are properly installed
-4. Verify database connectivity
-
-## Acknowledgments
-
-- Built with modern web technologies
-- Designed for Indian users with native currency support
-- Responsive design for all device types
-- Comprehensive expense tracking capabilities
+## Expense Tracker — Smart Personal Finance Dashboard for Managing & Visualizing Expenses
+
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Python](https://img.shields.io/badge/Python-3.13-blue)
+![Django](https://img.shields.io/badge/Django-4.2-darkgreen)
+![React](https://img.shields.io/badge/React-18-61DAFB)
+![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)
+
+### Friendly, data‑driven expense tracking with analytics, budgets, recurring payments, and rich visualizations.
 
 ---
 
-**Note**: This application is designed for personal use and should not be used for commercial purposes without proper licensing and security considerations.
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Demo / Screenshots](#demo--screenshots)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Roadmap](#roadmap)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## Overview
+
+Expense Tracker is a full‑stack web application to record, categorize, and analyze personal spending. It helps you:
+
+- Understand where your money goes
+- Track recurring expenses and subscriptions
+- Visualize spending trends over time
+- Export/Import data for backups or migration
+
+With a clean UI, fast search, and actionable charts, Expense Tracker makes daily budgeting effortless.
+
+---
+
+## Key Features
+
+- **Authentication with JWT**: Secure login and protected endpoints.
+- **Expense CRUD**: Add, edit, delete, and search expenses.
+- **Categories & Tags**: Organize spending by category and keyword.
+- **Recurring Payments**: Automate periodic expenses (daily, weekly, monthly, yearly).
+- **Dashboards & Analytics**: Summaries, trends, and category breakdowns.
+- **Interactive Charts**: Visualize monthly and category spend.
+- **Reports**: Overview and detailed history views.
+- **CSV Import/Export**: Move data easily via CSV (powered by PapaParse).
+- **Responsive UI**: Modern, mobile‑friendly layout with Tailwind CSS.
+- **API Fallback**: If backend is unavailable, selected features gracefully fallback to local storage for demos.
+
+---
+
+## Demo / Screenshots
+
+<p align="center">
+  <img src="Img/Dashboard.png" alt="Dashboard" width="800" />
+  <br/>
+  <em>Dashboard — at‑a‑glance overview of spending</em>
+</p>
+
+<p align="center">
+  <img src="Img/Add_Expenses.png" alt="Add Expenses" width="800" />
+  <br/>
+  <em>Add Expenses — fast input with categories and notes</em>
+</p>
+
+<p align="center">
+  <img src="Img/History.png" alt="History" width="800" />
+  <br/>
+  <em>History — filterable, searchable list of all transactions</em>
+</p>
+
+<p align="center">
+  <img src="Img/Recurring.png" alt="Recurring" width="800" />
+  <br/>
+  <em>Recurring — manage subscriptions and periodic expenses</em>
+</p>
+
+<p align="center">
+  <img src="Img/Reports.png" alt="Reports" width="800" />
+  <br/>
+  <em>Reports — category and time‑based analytics</em>
+</p>
+
+---
+
+## Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite, React Router, Tailwind CSS, Recharts, React Hot Toast
+- **Backend**: Django 4.2, Django REST Framework, Simple JWT, django‑cors‑headers, Pillow
+- **Database**: SQLite (dev). Easily swappable to PostgreSQL/MySQL.
+- **Auth**: JWT tokens via DRF SimpleJWT
+- **Utilities**: Axios, date‑fns, PapaParse
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A[React + Vite (Frontend)] -- Axios/JSON --> B[(Django REST API)]
+  B -- ORM --> C[(Database: SQLite / Postgres / MySQL)]
+  A --> D[Recharts Visualizations]
+  A --> E[Tailwind UI]
+  B --> F[JWT Auth]
+```
+
+- **Frontend** handles UI, routing, and data fetching via Axios
+- **Backend** exposes RESTful endpoints (JWT‑protected)
+- **Database** persists users, expenses, categories, and recurring rules
+- **Visualization** uses Recharts for interactive insights
+
+---
+
+## Installation
+
+> Prerequisites: Node.js 18+ (preferably 20+), Python 3.10+, Git
+
+1. **Clone the repository**
+
+```bash
+git clone <your-repo-url>
+cd Expense_Tracker
+```
+
+2. **Backend setup (Django)**
+
+```bash
+# (Windows PowerShell)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
+
+# Migrate DB and create a superuser
+cd backend
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+3. **Frontend setup (React + Vite)**
+
+```bash
+cd ..  # back to project root
+npm install
+```
+
+---
+
+## Usage
+
+1. **Start the backend** (Django runs on `http://localhost:8000`)
+
+```bash
+cd backend
+python manage.py runserver
+```
+
+2. **Start the frontend** (Vite runs on `http://localhost:5173` by default)
+
+```bash
+cd ..
+npm run dev
+```
+
+3. **Build frontend for production**
+
+```bash
+npm run build
+```
+
+> Login with your superuser or register via the app. Protected API calls require a valid JWT; the frontend automatically attaches stored tokens.
+
+---
+
+## Configuration
+
+- **API Base URL**: The frontend targets the Django API at `http://localhost:8000/api`.
+  - Update `src/services/api.ts` constant `API_BASE_URL` if your backend host/port differs.
+- **CORS**: Ensure your backend allows the frontend origin (configured via `django-cors-headers`).
+- **Database**: Default is SQLite (see `backend/settings.py`). For Postgres/MySQL, update `DATABASES` settings and install the appropriate driver.
+
+---
+
+## Roadmap
+
+- [ ] Budgets and alerts (monthly/weekly limits)
+- [ ] Multi‑currency support and FX conversions
+- [ ] Advanced filtering and saved views
+- [ ] Export to XLSX and Google Sheets
+- [ ] PWA support and offline mode
+- [ ] Dark mode and theme presets
+
+---
+
+## License
+
+This project is licensed under the **Apache License 2.0**. See the [`LICENSE`](LICENSE) file for details.
+
+---
+
+## Contact
+
+- **Author**: Buildwith.18
+- **GitHub**: [github.com/your-username](https://github.com/Buildwith18)
+- **Email**: buildwith.18@gmail.com
+
+If you find this useful, consider starring the repo. Thanks!
