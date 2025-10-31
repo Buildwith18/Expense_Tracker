@@ -231,8 +231,14 @@ This project is licensed under the **Apache License 2.0**. See the [`LICENSE`](L
 
 ## Contact
 
+<<<<<<< HEAD
 - **Author**: Buildwith.18
 - **GitHub**: [github.com/Buildwith18](https://github.com/Buildwith18)
 - **Email**: [buildwith.18@gmail.com](mailto:buildwith.18@gmail.com)
+=======
+- **Author**: Buildwith18
+- **GitHub**: [github.com/Buildwith18](https://github.com/Buildwith18)
+- **Email**: buildwith.18@gmail.com
+>>>>>>> c4449fc378921c7478623591b3d9b4e6aebbd3e4
 
 If you find this useful, consider starring the repo. Thanks!
