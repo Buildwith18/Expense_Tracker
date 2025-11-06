@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { reportsApi } from '../services/api';
 import Layout from '../components/Layout/Layout';
 import StatCard from '../components/Cards/StatCard';
@@ -19,6 +20,7 @@ import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
 
 const Reports: React.FC = () => {
+  const location = useLocation();
   const [reportsData, setReportsData] = useState<any>(null);
   const [spendingTrendData, setSpendingTrendData] = useState<any>(null);
   const [categorySummaryData, setCategorySummaryData] = useState<any>(null);
@@ -30,6 +32,14 @@ const Reports: React.FC = () => {
   useEffect(() => {
     fetchAllReportsData();
   }, [viewType, selectedPeriod]);
+
+  // Refresh reports when user navigates to this page
+  useEffect(() => {
+    if (location.pathname === '/reports') {
+      fetchAllReportsData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const fetchAllReportsData = async () => {
     try {

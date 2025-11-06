@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useExpenses } from '../context/ExpenseContext';
 import { expenseApi, userApi } from '../services/api';
 import { Expense } from '../types';
 import Layout from '../components/Layout/Layout';
@@ -14,19 +15,20 @@ import {
   DollarSign, 
   Calendar,
   Target,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { expenses: contextExpenses, refreshExpenses } = useExpenses();
   
-  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  
   const [budgetData, setBudgetData] = useState({
     monthlyBudget: 15000,
     currentMonthExpenses: 0,
@@ -34,89 +36,132 @@ const Dashboard: React.FC = () => {
     budgetPercentage: 0
   });
 
+  // Fetch budget settings on mount and when user changes
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchBudgetSettings();
+  }, [user]);
 
-  const fetchData = async () => {
+  // Refresh expenses when user navigates to dashboard
+  useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      refreshDashboardData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Update dashboard when context expenses change (after add/edit/delete)
+  useEffect(() => {
+    updateBudgetFromExpenses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextExpenses]);
+
+  const fetchBudgetSettings = async () => {
+    try {
+      const settings = await userApi.getSettings();
+      const monthlyBudget = settings.monthly_budget || 15000;
+      setBudgetData(prev => ({
+        ...prev,
+        monthlyBudget: monthlyBudget
+      }));
+      updateBudgetFromExpenses(monthlyBudget);
+    } catch (settingsError) {
+      console.warn('Failed to fetch settings, using defaults:', settingsError);
+      updateBudgetFromExpenses(15000);
+    }
+  };
+
+  const refreshDashboardData = async () => {
     try {
       setIsLoading(true);
-      // Calculate current month date range
-      const now = new Date();
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-      // Fetch only current month's expenses (up to 100)
-      const paged = await expenseApi.getExpensesPaginated({ page: 1, pageSize: 100, startDate, endDate });
-      const expensesData = paged.results || [];
-      setExpenses(expensesData);
-      // Calculate current month expenses from fetched data
-      const actualCurrentMonthTotal = expensesData.reduce((sum, expense) => sum + expense.amount, 0);
-      // Fetch user settings for budget
-      try {
-        const settings = await userApi.getSettings();
-        const monthlyBudget = settings.monthly_budget || 15000;
-        setBudgetData({
-          monthlyBudget: monthlyBudget,
-          currentMonthExpenses: actualCurrentMonthTotal,
-          budgetRemaining: monthlyBudget - actualCurrentMonthTotal,
-          budgetPercentage: (actualCurrentMonthTotal / monthlyBudget) * 100
-        });
-      } catch (settingsError) {
-        console.warn('Failed to fetch settings, using defaults:', settingsError);
-        setBudgetData({
-          monthlyBudget: 15000,
-          currentMonthExpenses: actualCurrentMonthTotal,
-          budgetRemaining: 15000 - actualCurrentMonthTotal,
-          budgetPercentage: (actualCurrentMonthTotal / 15000) * 100
-        });
-      }
+      // Refresh expenses from context
+      await refreshExpenses();
+      // Also refresh budget settings
+      await fetchBudgetSettings();
     } catch (err) {
-      console.error('Failed to fetch data:', err);
-      setError('Failed to fetch expenses');
+      console.error('Failed to refresh dashboard data:', err);
+      setError('Failed to refresh data');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const updateBudgetFromExpenses = (budget?: number) => {
+    const currentMonthExpenses = getCurrentMonthExpenses(contextExpenses);
+    const actualCurrentMonthTotal = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const monthlyBudget = budget || budgetData.monthlyBudget;
+    
+    setBudgetData(prev => ({
+      monthlyBudget: budget || prev.monthlyBudget,
+      currentMonthExpenses: actualCurrentMonthTotal,
+      budgetRemaining: monthlyBudget - actualCurrentMonthTotal,
+      budgetPercentage: (actualCurrentMonthTotal / monthlyBudget) * 100
+    }));
+  };
+
+  const getCurrentMonthExpenses = (expensesList: Expense[]) => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    
+    return expensesList.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return (
+        expenseDate.getMonth() === currentMonth &&
+        expenseDate.getFullYear() === currentYear
+      );
+    });
+  };
+
+  // Memoized calculations for current month expenses
+  const currentMonthExpenses = useMemo(() => {
+    return getCurrentMonthExpenses(contextExpenses);
+  }, [contextExpenses]);
+
   // Current date setup
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   const currentDay = currentDate.getDate();
 
-  // Filter current month expenses (recalculate to ensure accuracy)
-  const currentMonthExpenses = expenses.filter(expense => {
-    const expenseDate = new Date(expense.date);
-    return (
-      expenseDate.getMonth() === currentMonth &&
-      expenseDate.getFullYear() === currentYear
-    );
-  });
-
   // Use ONLY the calculated current month total
-  const totalExpenses = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const budgetRemaining = budgetData.monthlyBudget - totalExpenses;
-  const budgetPercentage = (totalExpenses / budgetData.monthlyBudget) * 100;
+  const totalExpenses = useMemo(() => {
+    return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [currentMonthExpenses]);
+
+  const budgetRemaining = useMemo(() => {
+    return budgetData.monthlyBudget - totalExpenses;
+  }, [budgetData.monthlyBudget, totalExpenses]);
+
+  const budgetPercentage = useMemo(() => {
+    return (totalExpenses / budgetData.monthlyBudget) * 100;
+  }, [totalExpenses, budgetData.monthlyBudget]);
 
   // Daily average calculations
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const dailyAverage = totalExpenses / currentDay;
+  const daysInMonth = useMemo(() => {
+    return new Date(currentYear, currentMonth + 1, 0).getDate();
+  }, [currentYear, currentMonth]);
+
+  const dailyAverage = useMemo(() => {
+    return currentDay > 0 ? totalExpenses / currentDay : 0;
+  }, [totalExpenses, currentDay]);
 
   // Pie chart data by category (current month only)
-  const categoryData = currentMonthExpenses.reduce((acc, expense) => {
-    const category = expense.category;
-    acc[category] = (acc[category] || 0) + expense.amount;
-    return acc;
-  }, {} as Record<string, number>);
+  const pieChartData = useMemo(() => {
+    const categoryData = currentMonthExpenses.reduce((acc, expense) => {
+      const category = expense.category;
+      acc[category] = (acc[category] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
 
-  const pieChartData = Object.entries(categoryData).map(([name, value]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    value,
-    color: '#3B82F6'
-  }));
+    return Object.entries(categoryData).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value,
+      color: '#3B82F6'
+    }));
+  }, [currentMonthExpenses]);
 
   // Monthly trend mock data (replace with real API if needed)
-  const monthlyTrendData = [
+  const monthlyTrendData = useMemo(() => [
     { name: 'Jan', amount: 12000 },
     { name: 'Feb', amount: 15000 },
     { name: 'Mar', amount: 18000 },
@@ -124,7 +169,7 @@ const Dashboard: React.FC = () => {
     { name: 'May', amount: 16000 },
     { name: 'Jun', amount: 19000 },
     { name: format(currentDate, 'MMM'), amount: totalExpenses },
-  ];
+  ], [totalExpenses, currentDate]);
 
   if (isLoading) {
     return (
@@ -140,13 +185,24 @@ const Dashboard: React.FC = () => {
     <Layout>
       <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Here's your financial overview for {format(new Date(), 'MMMM yyyy')}
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Current month expenses: {currentMonthExpenses.length} transactions totaling {formatIndianCurrency(totalExpenses)}
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Here's your financial overview for {format(new Date(), 'MMMM yyyy')}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Current month expenses: {currentMonthExpenses.length} transactions totaling {formatIndianCurrency(totalExpenses)}
+            </p>
+          </div>
+          <button
+            onClick={refreshDashboardData}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh dashboard data"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
 
         {error && (
@@ -262,15 +318,6 @@ const Dashboard: React.FC = () => {
                   ⚠️ Approaching budget limit
                 </div>
               )}
-
-              {/* Debug Info (remove in production) */}
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-xs text-gray-600 dark:text-gray-400">
-                <div>Debug Info:</div>
-                <div>• Current Month Expenses: {currentMonthExpenses.length} items</div>
-                <div>• Calculated Total: {formatIndianCurrency(totalExpenses)}</div>
-                <div>• Monthly Budget: {formatIndianCurrency(budgetData.monthlyBudget)}</div>
-                <div>• Budget Percentage: {budgetPercentage.toFixed(2)}%</div>
-              </div>
             </div>
           </div>
         </div>
