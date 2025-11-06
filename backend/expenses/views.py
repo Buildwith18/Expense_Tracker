@@ -461,6 +461,16 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         """
         return Expense.objects.filter(user=self.request.user)
 
+    def list(self, request, *args, **kwargs):
+        """
+        List all expenses for authenticated user
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Return unpaginated list for simple API calls
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def get_serializer_class(self):
         """
         Return appropriate serializer based on action

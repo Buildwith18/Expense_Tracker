@@ -72,38 +72,31 @@ export const expenseApi = {
   // Get all expenses for authenticated user
   getExpenses: async (): Promise<Expense[]> => {
     try {
-      if (await isBackendAvailable()) {
-        const response = await api.get('/expenses/');
-        return response.data;
-      } else {
-        return getMockExpenses();
-      }
+      const response = await api.get('/expenses/');
+      console.log('Expenses fetched from backend:', response.data);
+      return response.data;
     } catch (error) {
-      console.error('Failed to fetch expenses:', error);
-      return getMockExpenses();
+      console.error('Failed to fetch expenses from backend:', error);
+      // Only fallback to mock if backend is truly unavailable
+      const mockExpenses = getMockExpenses();
+      console.warn('Using localStorage fallback, expenses:', mockExpenses.length);
+      return mockExpenses;
     }
   },
 
   // Search expenses
   searchExpenses: async (query: string): Promise<Expense[]> => {
     try {
-      if (await isBackendAvailable()) {
-        const response = await api.get(`/expenses/?search=${query}`);
-        return response.data;
-      } else {
-        const expenses = getMockExpenses();
-        return expenses.filter(expense => 
-          expense.title.toLowerCase().includes(query.toLowerCase()) ||
-          expense.category.toLowerCase().includes(query.toLowerCase()) ||
-          expense.description?.toLowerCase().includes(query.toLowerCase()) ||
-          expense.amount.toString().includes(query)
-        );
-      }
+      const response = await api.get(`/expenses/?search=${query}`);
+      return response.data;
     } catch (error) {
-      console.error('Failed to search expenses:', error);
+      console.error('Failed to search expenses from backend:', error);
       const expenses = getMockExpenses();
-      return expenses.filter(expense => 
-        expense.title.toLowerCase().includes(query.toLowerCase())
+      return expenses.filter(expense =>
+        expense.title.toLowerCase().includes(query.toLowerCase()) ||
+        expense.category.toLowerCase().includes(query.toLowerCase()) ||
+        expense.description?.toLowerCase().includes(query.toLowerCase()) ||
+        expense.amount.toString().includes(query)
       );
     }
   },
@@ -111,77 +104,87 @@ export const expenseApi = {
   // Create new expense
   createExpense: async (expenseData: Omit<Expense, 'id' | 'userId' | 'createdAt'>): Promise<Expense> => {
     try {
-      if (await isBackendAvailable()) {
-        const response = await api.post('/expenses/', expenseData);
-        toast.success('Expense saved to backend!');
-        return response.data.expense || response.data;
-      } else {
-        const newExpense: Expense = {
-          ...expenseData,
-          id: Date.now().toString(),
-          userId: '1',
-          createdAt: new Date().toISOString(),
-        };
-        
-        const expenses = getMockExpenses();
-        expenses.push(newExpense);
-        saveMockExpenses(expenses);
-        toast.success('Expense saved locally!');
-        
-        return newExpense;
+      console.log('Creating expense:', expenseData);
+      const response = await api.post('/expenses/', expenseData);
+      console.log('Expense created response:', response.data);
+
+      const savedExpense = response.data.expense || response.data;
+      toast.success('Expense saved successfully!');
+      return savedExpense;
+    } catch (error: any) {
+      console.error('Failed to create expense on backend:', error);
+      console.error('Error response:', error.response?.data);
+
+      // Fallback to localStorage only if backend is unavailable
+      if (error.response?.status === 401) {
+        toast.error('Please login to save expenses');
+        throw error;
       }
-    } catch (error) {
-      console.error('Failed to create expense:', error);
-      toast.error('Failed to save expense');
-      throw error;
+
+      const newExpense: Expense = {
+        ...expenseData,
+        id: Date.now().toString(),
+        userId: '1',
+        createdAt: new Date().toISOString(),
+      };
+
+      const expenses = getMockExpenses();
+      expenses.push(newExpense);
+      saveMockExpenses(expenses);
+      toast.warning('Expense saved locally (backend unavailable)');
+
+      return newExpense;
     }
   },
 
   // Update expense
   updateExpense: async (id: string, expenseData: Partial<Expense>): Promise<Expense> => {
     try {
-      if (await isBackendAvailable()) {
-        const response = await api.put(`/expenses/${id}/`, expenseData);
-        toast.success('Expense updated in backend!');
-        return response.data.expense || response.data;
-      } else {
-        const expenses = getMockExpenses();
-        const index = expenses.findIndex(exp => exp.id === id);
-        
-        if (index === -1) {
-          throw new Error('Expense not found');
-        }
-        
-        const updatedExpense = { ...expenses[index], ...expenseData };
-        expenses[index] = updatedExpense;
-        saveMockExpenses(expenses);
-        toast.success('Expense updated locally!');
-        
-        return updatedExpense;
+      const response = await api.put(`/expenses/${id}/`, expenseData);
+      const updatedExpense = response.data.expense || response.data;
+      toast.success('Expense updated successfully!');
+      return updatedExpense;
+    } catch (error: any) {
+      console.error('Failed to update expense on backend:', error);
+
+      if (error.response?.status === 401) {
+        toast.error('Please login to update expenses');
+        throw error;
       }
-    } catch (error) {
-      console.error('Failed to update expense:', error);
-      toast.error('Failed to update expense');
-      throw error;
+
+      const expenses = getMockExpenses();
+      const index = expenses.findIndex(exp => exp.id === id);
+
+      if (index === -1) {
+        throw new Error('Expense not found');
+      }
+
+      const updatedExpense = { ...expenses[index], ...expenseData };
+      expenses[index] = updatedExpense;
+      saveMockExpenses(expenses);
+      toast.warning('Expense updated locally (backend unavailable)');
+
+      return updatedExpense;
     }
   },
 
   // Delete expense
   deleteExpense: async (id: string): Promise<void> => {
     try {
-      if (await isBackendAvailable()) {
-        await api.delete(`/expenses/${id}/`);
-        toast.success('Expense deleted from backend!');
-      } else {
-        const expenses = getMockExpenses();
-        const filteredExpenses = expenses.filter(exp => exp.id !== id);
-        saveMockExpenses(filteredExpenses);
-        toast.success('Expense deleted locally!');
+      await api.delete(`/expenses/${id}/`);
+      toast.success('Expense deleted successfully!');
+    } catch (error: any) {
+      console.error('Failed to delete expense on backend:', error);
+
+      if (error.response?.status === 401) {
+        toast.error('Please login to delete expenses');
+        throw error;
       }
-    } catch (error) {
-      console.error('Failed to delete expense:', error);
-      toast.error('Failed to delete expense');
-      throw error;
+
+      const expenses = getMockExpenses();
+      const filteredExpenses = expenses.filter(exp => exp.id !== id);
+      saveMockExpenses(filteredExpenses);
+      toast.warning('Expense deleted locally (backend unavailable)');
     }
   },
 
