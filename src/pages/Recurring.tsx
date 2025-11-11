@@ -1,23 +1,10 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-import { recurringApi } from '../services/api';
+import { recurringApi, RecurringExpense } from '../services/api';
 import Layout from '../components/Layout/Layout';
 import { Plus, RefreshCw, Edit, Trash2, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
-
-interface RecurringExpense {
-  id: string;
-  title: string;
-  amount: number;
-  category: string;
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  start_date: string;
-  end_date?: string;
-  next_date: string;
-  is_active: boolean;
-  description?: string;
-}
 
 const Recurring: React.FC = () => {
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
@@ -36,7 +23,7 @@ const Recurring: React.FC = () => {
     description: ''
   });
 
-  const categories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Other'];
+  const categories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Education', 'Travel', 'Other'];
   const frequencies = [
     { value: 'daily', label: 'Daily' },
     { value: 'weekly', label: 'Weekly' },
@@ -51,11 +38,23 @@ const Recurring: React.FC = () => {
   const fetchRecurringExpenses = async () => {
     try {
       setIsLoading(true);
+      setError('');
       const data = await recurringApi.getRecurringExpenses();
+      
+      // Ensure data is an array
+      if (!Array.isArray(data)) {
+        console.warn('Recurring expenses is not an array:', data);
+        setRecurringExpenses([]);
+        return;
+      }
+      
       setRecurringExpenses(data);
     } catch (err) {
+      console.error('Failed to fetch recurring expenses:', err);
       setError('Failed to fetch recurring expenses');
       toast.error('Failed to fetch recurring expenses');
+      // Set empty array on error to prevent map errors
+      setRecurringExpenses([]);
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +67,8 @@ const Recurring: React.FC = () => {
       utilities: 'bg-green-100 text-green-800',
       healthcare: 'bg-red-100 text-red-800',
       shopping: 'bg-pink-100 text-pink-800',
+      education: 'bg-indigo-100 text-indigo-800',
+      travel: 'bg-cyan-100 text-cyan-800',
       other: 'bg-gray-100 text-gray-800',
     };
     return colors[category.toLowerCase()] || colors.other;
@@ -107,10 +108,13 @@ const Recurring: React.FC = () => {
   const handleCreate = async (data: any) => {
     try {
       const newRecurring = await recurringApi.createRecurringExpense(data);
-      setRecurringExpenses([...recurringExpenses, newRecurring]);
+      // Ensure recurringExpenses is an array before spreading
+      const currentExpenses = Array.isArray(recurringExpenses) ? recurringExpenses : [];
+      setRecurringExpenses([...currentExpenses, newRecurring]);
       resetForm();
       toast.success('Recurring expense created successfully!');
     } catch (err) {
+      console.error('Failed to create recurring expense:', err);
       setError('Failed to create recurring expense');
       toast.error('Failed to create recurring expense');
     }
@@ -121,12 +125,15 @@ const Recurring: React.FC = () => {
     
     try {
       const updated = await recurringApi.updateRecurringExpense(editingRecurring.id, data);
-      setRecurringExpenses(recurringExpenses.map(r => 
+      // Ensure recurringExpenses is an array
+      const currentExpenses = Array.isArray(recurringExpenses) ? recurringExpenses : [];
+      setRecurringExpenses(currentExpenses.map(r => 
         r.id === editingRecurring.id ? updated : r
       ));
       resetForm();
       toast.success('Recurring expense updated successfully!');
     } catch (err) {
+      console.error('Failed to update recurring expense:', err);
       setError('Failed to update recurring expense');
       toast.error('Failed to update recurring expense');
     }
@@ -169,9 +176,12 @@ const Recurring: React.FC = () => {
   const deleteRecurring = async (id: string) => {
     try {
       await recurringApi.deleteRecurringExpense(id);
-      setRecurringExpenses(recurringExpenses.filter(expense => expense.id !== id));
+      // Ensure recurringExpenses is an array
+      const currentExpenses = Array.isArray(recurringExpenses) ? recurringExpenses : [];
+      setRecurringExpenses(currentExpenses.filter(expense => expense.id !== id));
       toast.success('Recurring expense deleted successfully!');
     } catch (err) {
+      console.error('Failed to delete recurring expense:', err);
       setError('Failed to delete recurring expense');
       toast.error('Failed to delete recurring expense');
     }
@@ -184,11 +194,14 @@ const Recurring: React.FC = () => {
   const toggleRecurringActive = async (id: string) => {
     try {
       const updated = await recurringApi.toggleActive(id);
-      setRecurringExpenses(recurringExpenses.map(expense =>
+      // Ensure recurringExpenses is an array
+      const currentExpenses = Array.isArray(recurringExpenses) ? recurringExpenses : [];
+      setRecurringExpenses(currentExpenses.map(expense =>
         expense.id === id ? updated : expense
       ));
       toast.success(`Recurring expense ${updated.is_active ? 'activated' : 'paused'}!`);
     } catch (err) {
+      console.error('Failed to toggle recurring expense:', err);
       setError('Failed to toggle recurring expense');
       toast.error('Failed to toggle recurring expense');
     }
@@ -373,7 +386,7 @@ const Recurring: React.FC = () => {
 
         {/* Recurring Expenses List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          {recurringExpenses.length === 0 ? (
+          {!Array.isArray(recurringExpenses) || recurringExpenses.length === 0 ? (
             <div className="text-center py-12">
               <RefreshCw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No recurring expenses</h3>
@@ -388,7 +401,7 @@ const Recurring: React.FC = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {recurringExpenses.map((expense) => (
+              {Array.isArray(recurringExpenses) && recurringExpenses.map((expense) => (
                 <div key={expense.id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

@@ -110,6 +110,13 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Title cannot be empty.")
         return value.strip()
 
+    def create(self, validated_data):
+        """
+        Create expense and associate with current user
+        """
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
 
 class ExpenseStatsSerializer(serializers.Serializer):
     """

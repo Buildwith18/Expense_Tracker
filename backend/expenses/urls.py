@@ -9,5 +9,7 @@ router.register(r'recurring', views.RecurringExpenseViewSet, basename='recurring
 urlpatterns = [
     path('', include(router.urls)),
     path('reports/', views.ReportsView.as_view(), name='reports'),
+    path('reports/spending_trend/', views.SpendingTrendView.as_view(), name='reports_spending_trend'),
+    path('reports/category_summary/', views.CategorySummaryView.as_view(), name='reports_category_summary'),
     path('notifications/', views.NotificationsView.as_view(), name='notifications'),
 ]

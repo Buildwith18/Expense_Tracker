@@ -27,6 +27,8 @@ const AddExpense: React.FC = () => {
     'Utilities',
     'Healthcare',
     'Shopping',
+    'Education',
+    'Travel',
     'Other',
   ];
 
@@ -60,7 +62,7 @@ const AddExpense: React.FC = () => {
       await addExpense({
         title: formData.title.trim(),
         amount,
-        category: formData.category,
+        category: formData.category.toLowerCase(),
         date: formData.date,
         description: formData.description.trim(),
       });

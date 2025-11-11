@@ -17,44 +17,59 @@ from .serializers import (
 from rest_framework.pagination import PageNumberPagination
 
 
-class NotificationsView(generics.ListAPIView):
+class NotificationsView(generics.GenericAPIView):
     """
-    View for user notifications
+    View for user notifications - returns empty list if notifications table doesn't exist
     """
     permission_classes = [permissions.IsAuthenticated]
     
-    def get_queryset(self):
-        return self.request.user.notifications.all()
-    
     def get(self, request):
         """Get user notifications"""
-        notifications = self.get_queryset()[:10]  # Latest 10 notifications
-        
-        notification_data = []
-        for notification in notifications:
-            notification_data.append({
-                'id': notification.id,
-                'title': notification.title,
-                'message': notification.message,
-                'type': notification.type,
-                'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat()
+        try:
+            # Check if user has notifications attribute (table exists)
+            if not hasattr(request.user, 'notifications'):
+                return Response({
+                    'notifications': [],
+                    'unread_count': 0
+                })
+            
+            notifications = request.user.notifications.all()[:10]  # Latest 10 notifications
+            
+            notification_data = []
+            for notification in notifications:
+                notification_data.append({
+                    'id': notification.id,
+                    'title': notification.title,
+                    'message': notification.message,
+                    'type': getattr(notification, 'type', 'info'),
+                    'is_read': notification.is_read,
+                    'created_at': notification.created_at.isoformat()
+                })
+            
+            return Response({
+                'notifications': notification_data,
+                'unread_count': notifications.filter(is_read=False).count()
             })
-        
-        return Response({
-            'notifications': notification_data,
-            'unread_count': notifications.filter(is_read=False).count()
-        })
+        except Exception as e:
+            # If table doesn't exist or any other error, return empty safely
+            print(f"Notifications error: {e}")
+            return Response({
+                'notifications': [],
+                'unread_count': 0
+            })
     
     def post(self, request):
         """Mark notification as read"""
-        notification_id = request.data.get('notification_id')
         try:
-            notification = self.get_queryset().get(id=notification_id)
+            if not hasattr(request.user, 'notifications'):
+                return Response({'message': 'Notifications not configured'})
+            
+            notification_id = request.data.get('notification_id')
+            notification = request.user.notifications.get(id=notification_id)
             notification.is_read = True
             notification.save()
             return Response({'message': 'Notification marked as read'})
-        except:
+        except Exception as e:
             return Response({'error': 'Notification not found'}, status=404)
 class ReportsView(generics.GenericAPIView):
     """
@@ -160,8 +175,13 @@ class ReportsView(generics.GenericAPIView):
             }
         })
 
-    @action(detail=False, methods=['get'])
-    def spending_trend(self, request):
+class SpendingTrendView(generics.GenericAPIView):
+    """
+    View for getting spending trend data for charts
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
         """Get spending trend data for charts"""
         user = request.user
         expenses = Expense.objects.filter(user=user)
@@ -220,8 +240,14 @@ class ReportsView(generics.GenericAPIView):
             'total_periods': len(trend_data)
         })
 
-    @action(detail=False, methods=['get'])
-    def category_summary(self, request):
+
+class CategorySummaryView(generics.GenericAPIView):
+    """
+    View for getting category summary data for charts
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
         """Get category summary data for charts"""
         user = request.user
         expenses = Expense.objects.filter(user=user)
@@ -273,6 +299,8 @@ class ReportsView(generics.GenericAPIView):
             'total_amount': float(total_amount),
             'total_categories': len(category_data)
         })
+
+
 class RecurringExpenseViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing recurring expenses

@@ -58,7 +58,8 @@ const Dashboard: React.FC = () => {
   const fetchBudgetSettings = async () => {
     try {
       const settings = await userApi.getSettings();
-      const monthlyBudget = settings.monthly_budget || 15000;
+      // Backend returns budget_stats, user, and alerts
+      const monthlyBudget = settings.user?.monthly_budget || settings.monthly_budget || 15000;
       setBudgetData(prev => ({
         ...prev,
         monthlyBudget: monthlyBudget
@@ -66,6 +67,7 @@ const Dashboard: React.FC = () => {
       updateBudgetFromExpenses(monthlyBudget);
     } catch (settingsError) {
       console.warn('Failed to fetch settings, using defaults:', settingsError);
+      // Use default budget if API fails
       updateBudgetFromExpenses(15000);
     }
   };
@@ -129,11 +131,15 @@ const Dashboard: React.FC = () => {
   }, [currentMonthExpenses]);
 
   const budgetRemaining = useMemo(() => {
-    return budgetData.monthlyBudget - totalExpenses;
+    const budget = Number(budgetData.monthlyBudget) || 0;
+    const spent = Number(totalExpenses) || 0;
+    return budget - spent;
   }, [budgetData.monthlyBudget, totalExpenses]);
 
   const budgetPercentage = useMemo(() => {
-    return (totalExpenses / budgetData.monthlyBudget) * 100;
+    const budget = Number(budgetData.monthlyBudget) || 0;
+    const spent = Number(totalExpenses) || 0;
+    return budget > 0 ? (spent / budget) * 100 : 0;
   }, [totalExpenses, budgetData.monthlyBudget]);
 
   // Daily average calculations
@@ -142,7 +148,9 @@ const Dashboard: React.FC = () => {
   }, [currentYear, currentMonth]);
 
   const dailyAverage = useMemo(() => {
-    return currentDay > 0 ? totalExpenses / currentDay : 0;
+    const spent = Number(totalExpenses) || 0;
+    const days = Number(currentDay) || 1;
+    return days > 0 ? spent / days : 0;
   }, [totalExpenses, currentDay]);
 
   // Pie chart data by category (current month only)
@@ -215,24 +223,24 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Spent (This Month)"
-            value={formatIndianCurrency(totalExpenses)}
-            subtitle={`${budgetPercentage.toFixed(1)}% of budget`}
+            value={formatIndianCurrency(Number(totalExpenses) || 0)}
+            subtitle={`${Number(budgetPercentage || 0).toFixed(1)}% of budget`}
             icon={TrendingDown}
             iconColor="text-red-600"
             iconBgColor="bg-red-100"
           />
           <StatCard
             title="Budget Remaining"
-            value={formatIndianCurrency(budgetRemaining)}
-            subtitle={`${(100 - budgetPercentage).toFixed(1)}% remaining`}
+            value={formatIndianCurrency(Number(budgetRemaining) || 0)}
+            subtitle={`${Number(100 - (budgetPercentage || 0)).toFixed(1)}% remaining`}
             icon={Target}
             iconColor="text-green-600"
             iconBgColor="bg-green-100"
           />
           <StatCard
             title="Daily Average"
-            value={formatIndianCurrency(dailyAverage)}
-            subtitle={`Projected: ${formatIndianCurrency(dailyAverage * daysInMonth)}`}
+            value={formatIndianCurrency(Number(dailyAverage) || 0)}
+            subtitle={`Projected: ${formatIndianCurrency(Number(dailyAverage || 0) * Number(daysInMonth || 30))}`}
             icon={DollarSign}
             iconColor="text-blue-600"
             iconBgColor="bg-blue-100"
@@ -240,7 +248,7 @@ const Dashboard: React.FC = () => {
           <StatCard
             title="Transactions (This Month)"
             value={currentMonthExpenses.length.toString()}
-            subtitle={`${Math.ceil(currentMonthExpenses.length / currentDay)} per day avg`}
+            subtitle={`${Math.ceil(currentMonthExpenses.length / (currentDay || 1))} per day avg`}
             icon={Calendar}
             iconColor="text-purple-600"
             iconBgColor="bg-purple-100"
@@ -250,9 +258,9 @@ const Dashboard: React.FC = () => {
         {/* Budget Progress */}
         <ProgressBar
           title="Monthly Budget Progress"
-          percentage={budgetPercentage}
-          spent={totalExpenses}
-          budget={budgetData.monthlyBudget}
+          percentage={Number(budgetPercentage) || 0}
+          spent={Number(totalExpenses) || 0}
+          budget={Number(budgetData.monthlyBudget) || 0}
         />
 
         {/* Charts Section */}
@@ -289,31 +297,31 @@ const Dashboard: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Month Progress</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{budgetPercentage.toFixed(1)}%</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{Number(budgetPercentage || 0).toFixed(1)}%</span>
               </div>
               
               <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    budgetPercentage > 100 ? 'bg-red-500' : 
-                    budgetPercentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                    (budgetPercentage || 0) > 100 ? 'bg-red-500' : 
+                    (budgetPercentage || 0) > 80 ? 'bg-yellow-500' : 'bg-green-500'
                   }`}
-                  style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                  style={{ width: `${Math.min(Number(budgetPercentage) || 0, 100)}%` }}
                 ></div>
               </div>
               
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>{formatIndianCurrency(totalExpenses)} spent</span>
-                <span>{formatIndianCurrency(budgetData.monthlyBudget)} budget</span>
+                <span>{formatIndianCurrency(Number(totalExpenses) || 0)} spent</span>
+                <span>{formatIndianCurrency(Number(budgetData.monthlyBudget) || 0)} budget</span>
               </div>
               
-              {budgetPercentage > 100 && (
+              {(budgetPercentage || 0) > 100 && (
                 <div className="text-sm text-red-600 font-medium">
-                  ⚠️ Over budget by {formatIndianCurrency(totalExpenses - budgetData.monthlyBudget)}
+                  ⚠️ Over budget by {formatIndianCurrency(Number(totalExpenses || 0) - Number(budgetData.monthlyBudget || 0))}
                 </div>
               )}
               
-              {budgetPercentage > 80 && budgetPercentage <= 100 && (
+              {(budgetPercentage || 0) > 80 && (budgetPercentage || 0) <= 100 && (
                 <div className="text-sm text-yellow-600 font-medium">
                   ⚠️ Approaching budget limit
                 </div>
