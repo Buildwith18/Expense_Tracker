@@ -1,7 +1,7 @@
-from rest_framework import viewsets, status, permissions
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
@@ -284,33 +284,52 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
         """Return recurring expenses for the current user only"""
         return RecurringExpense.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        """Save recurring expense with current user"""
-        serializer.save(user=self.request.user)
-
     def create(self, request, *args, **kwargs):
         """Create a new recurring expense"""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        recurring_expense = serializer.save(user=request.user)
-        
-        return Response({
-            'message': 'Recurring expense created successfully',
-            'recurring_expense': RecurringExpenseSerializer(recurring_expense).data
-        }, status=status.HTTP_201_CREATED)
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as exc:
+            return Response(
+                {'message': 'Invalid recurring expense data', 'errors': exc.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        recurring_expense = serializer.save()
+        response_data = RecurringExpenseSerializer(
+            recurring_expense, context={'request': request}
+        ).data
+
+        return Response(
+            {
+                'message': 'Recurring expense created successfully',
+                'recurring_expense': response_data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def update(self, request, *args, **kwargs):
         """Update a recurring expense"""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial, context={'request': request}
+        )
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as exc:
+            return Response(
+                {'message': 'Invalid recurring expense data', 'errors': exc.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         self.perform_update(serializer)
 
-        return Response({
-            'message': 'Recurring expense updated successfully',
-            'recurring_expense': serializer.data
-        })
+        return Response(
+            {
+                'message': 'Recurring expense updated successfully',
+                'recurring_expense': serializer.data,
+            }
+        )
 
     def destroy(self, request, *args, **kwargs):
         """Delete a recurring expense"""
@@ -326,11 +345,19 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
         recurring_expense = self.get_object()
         recurring_expense.is_active = not recurring_expense.is_active
         recurring_expense.save()
-        
-        return Response({
-            'message': f'Recurring expense {"activated" if recurring_expense.is_active else "deactivated"}',
-            'is_active': recurring_expense.is_active
-        })
+
+        serialized = RecurringExpenseSerializer(
+            recurring_expense, context={'request': request}
+        ).data
+
+        return Response(
+            {
+                'message': (
+                    f'Recurring expense {"activated" if recurring_expense.is_active else "deactivated"}'
+                ),
+                'recurring_expense': serialized,
+            }
+        )
 
     @action(detail=False, methods=['post'])
     def generate_expenses(self, request):
@@ -479,26 +506,28 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             return ExpenseCreateSerializer
         return ExpenseSerializer
 
-    def perform_create(self, serializer):
-        """
-        Save expense with current user
-        """
-        serializer.save(user=self.request.user)
-
     def create(self, request, *args, **kwargs):
         """
         Create a new expense
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        expense = serializer.save(user=request.user)
-        
-        # Return full expense data
-        response_serializer = ExpenseSerializer(expense)
-        return Response({
-            'message': 'Expense created successfully',
-            'expense': response_serializer.data
-        }, status=status.HTTP_201_CREATED)
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as exc:
+            return Response(
+                {'message': 'Invalid expense data', 'errors': exc.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        expense = serializer.save()
+
+        response_serializer = ExpenseSerializer(expense, context={'request': request})
+        return Response(
+            {
+                'message': 'Expense created successfully',
+                'expense': response_serializer.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def update(self, request, *args, **kwargs):
         """
@@ -506,8 +535,16 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial, context={'request': request}
+        )
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as exc:
+            return Response(
+                {'message': 'Invalid expense data', 'errors': exc.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         self.perform_update(serializer)
 
         return Response({

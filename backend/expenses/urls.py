@@ -9,5 +9,5 @@ router.register(r'recurring', views.RecurringExpenseViewSet, basename='recurring
 urlpatterns = [
     path('', include(router.urls)),
     path('reports/', views.ReportsView.as_view(), name='reports'),
-    path('notifications/', views.NotificationsView.as_view(), name='notifications'),
+    # path('notifications/', views.NotificationsView.as_view(), name='notifications'),
 ]

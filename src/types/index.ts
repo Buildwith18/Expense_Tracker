@@ -14,9 +14,11 @@ export interface Expense {
   amount: number;
   category: string;
   date: string;
-  description?: string;
-  userId: string;
-  createdAt: string;
+  description?: string | null;
+  user?: string;
+  formatted_amount?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AuthState {

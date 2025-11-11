@@ -18,6 +18,11 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'next_date': {'required': False},
+            'description': {'required': False, 'allow_blank': True},
+            'end_date': {'required': False, 'allow_null': True},
+        }
 
     def validate_amount(self, value):
         """Validate that amount is positive"""
@@ -30,6 +35,21 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Title cannot be empty.")
         return value.strip()
+
+    def validate_category(self, value):
+        """Ensure category matches available choices"""
+        value = value.lower()
+        valid_categories = {choice[0] for choice in Expense.CATEGORY_CHOICES}
+        if value not in valid_categories:
+            raise serializers.ValidationError("Invalid category.")
+        return value
+
+    def validate_frequency(self, value):
+        """Ensure frequency is a supported value"""
+        valid_frequencies = {choice[0] for choice in RecurringExpense.FREQUENCY_CHOICES}
+        if value not in valid_frequencies:
+            raise serializers.ValidationError("Invalid frequency.")
+        return value
 
     def validate(self, data):
         """Validate start_date and end_date"""
@@ -45,7 +65,10 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
         """Create recurring expense and set next_date if not provided"""
         if 'next_date' not in validated_data:
             validated_data['next_date'] = validated_data['start_date']
-        validated_data['user'] = self.context['request'].user
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            raise serializers.ValidationError("User context is required.")
+        validated_data['user'] = request.user
         return super().create(validated_data)
 class ExpenseSerializer(serializers.ModelSerializer):
     """
@@ -93,6 +116,9 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
         fields = ['title', 'amount', 'category', 'date', 'description']
+        extra_kwargs = {
+            'description': {'required': False, 'allow_blank': True},
+        }
 
     def validate_amount(self, value):
         """
@@ -109,6 +135,25 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Title cannot be empty.")
         return value.strip()
+
+    def validate_category(self, value):
+        """
+        Ensure category aligns with model choices
+        """
+        value = value.lower()
+        valid_categories = {choice[0] for choice in Expense.CATEGORY_CHOICES}
+        if value not in valid_categories:
+            raise serializers.ValidationError("Invalid category.")
+        return value
+
+    def create(self, validated_data):
+        """
+        Associate expense with the authenticated user
+        """
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            raise serializers.ValidationError("User context is required.")
+        return Expense.objects.create(user=request.user, **validated_data)
 
 
 class ExpenseStatsSerializer(serializers.Serializer):

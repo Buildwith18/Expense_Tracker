@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { recurringApi } from '../services/api';
 import Layout from '../components/Layout/Layout';
 import { Plus, RefreshCw, Edit, Trash2, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
+import { AxiosError } from 'axios';
 
 interface RecurringExpense {
   id: string;
@@ -36,7 +36,17 @@ const Recurring: React.FC = () => {
     description: ''
   });
 
-  const categories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Other'];
+  const categories = [
+    { value: 'food', label: 'Food' },
+    { value: 'transport', label: 'Transport' },
+    { value: 'entertainment', label: 'Entertainment' },
+    { value: 'shopping', label: 'Shopping' },
+    { value: 'utilities', label: 'Utilities / Bills' },
+    { value: 'healthcare', label: 'Healthcare' },
+    { value: 'education', label: 'Education' },
+    { value: 'travel', label: 'Travel' },
+    { value: 'other', label: 'Other' },
+  ];
   const frequencies = [
     { value: 'daily', label: 'Daily' },
     { value: 'weekly', label: 'Weekly' },
@@ -54,8 +64,13 @@ const Recurring: React.FC = () => {
       const data = await recurringApi.getRecurringExpenses();
       setRecurringExpenses(data);
     } catch (err) {
-      setError('Failed to fetch recurring expenses');
-      toast.error('Failed to fetch recurring expenses');
+      const axiosError = err as AxiosError<any>;
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.detail;
+      setError(message || 'Failed to fetch recurring expenses.');
+      toast.error(message || 'Failed to fetch recurring expenses.');
     } finally {
       setIsLoading(false);
     }
@@ -84,17 +99,29 @@ const Recurring: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError('');
+
+    if (!formData.title.trim() || !formData.amount || !formData.category) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    const amount = Number(formData.amount);
+    if (Number.isNaN(amount) || amount <= 0) {
+      setError('Please enter a valid amount greater than zero.');
+      return;
+    }
+
     const recurringData = {
-      title: formData.title,
-      amount: parseFloat(formData.amount),
-      category: formData.category.toLowerCase(),
+      title: formData.title.trim(),
+      amount,
+      category: formData.category,
       frequency: formData.frequency,
       start_date: formData.start_date,
-      end_date: formData.end_date || null,
-      next_date: formData.start_date,
-      is_active: true,
-      description: formData.description
+      ...(formData.end_date ? { end_date: formData.end_date } : {}),
+      ...(formData.description.trim()
+        ? { description: formData.description.trim() }
+        : {}),
     };
 
     if (editingRecurring) {
@@ -111,8 +138,13 @@ const Recurring: React.FC = () => {
       resetForm();
       toast.success('Recurring expense created successfully!');
     } catch (err) {
-      setError('Failed to create recurring expense');
-      toast.error('Failed to create recurring expense');
+      const axiosError = err as AxiosError<any>;
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.detail;
+      setError(message || 'Failed to create recurring expense.');
+      toast.error(message || 'Failed to create recurring expense.');
     }
   };
 
@@ -127,8 +159,13 @@ const Recurring: React.FC = () => {
       resetForm();
       toast.success('Recurring expense updated successfully!');
     } catch (err) {
-      setError('Failed to update recurring expense');
-      toast.error('Failed to update recurring expense');
+      const axiosError = err as AxiosError<any>;
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.detail;
+      setError(message || 'Failed to update recurring expense.');
+      toast.error(message || 'Failed to update recurring expense.');
     }
   };
 
@@ -142,6 +179,7 @@ const Recurring: React.FC = () => {
       end_date: '',
       description: ''
     });
+    setError('');
     setShowAddForm(false);
     setEditingRecurring(null);
   };
@@ -172,8 +210,13 @@ const Recurring: React.FC = () => {
       setRecurringExpenses(recurringExpenses.filter(expense => expense.id !== id));
       toast.success('Recurring expense deleted successfully!');
     } catch (err) {
-      setError('Failed to delete recurring expense');
-      toast.error('Failed to delete recurring expense');
+      const axiosError = err as AxiosError<any>;
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.detail;
+      setError(message || 'Failed to delete recurring expense.');
+      toast.error(message || 'Failed to delete recurring expense.');
     }
   };
 
@@ -189,8 +232,13 @@ const Recurring: React.FC = () => {
       ));
       toast.success(`Recurring expense ${updated.is_active ? 'activated' : 'paused'}!`);
     } catch (err) {
-      setError('Failed to toggle recurring expense');
-      toast.error('Failed to toggle recurring expense');
+      const axiosError = err as AxiosError<any>;
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.detail;
+      setError(message || 'Failed to toggle recurring expense.');
+      toast.error(message || 'Failed to toggle recurring expense.');
     }
   };
 
@@ -291,7 +339,7 @@ const Recurring: React.FC = () => {
                     >
                       <option value="">Select</option>
                       {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category.value} value={category.value}>{category.label}</option>
                       ))}
                     </select>
                   </div>

@@ -4,8 +4,8 @@ import { useExpenses } from '../context/ExpenseContext';
 import Layout from '../components/Layout/Layout';
 import ExpenseItem from '../components/ExpenseItem';
 import { Plus, ArrowLeft, RefreshCw } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
+import { AxiosError } from 'axios';
 
 const AddExpense: React.FC = () => {
   const navigate = useNavigate();
@@ -21,13 +21,15 @@ const AddExpense: React.FC = () => {
   const [error, setError] = useState('');
 
   const categories = [
-    'Food',
-    'Transport',
-    'Entertainment',
-    'Utilities',
-    'Healthcare',
-    'Shopping',
-    'Other',
+    { value: 'food', label: 'Food' },
+    { value: 'transport', label: 'Transport' },
+    { value: 'entertainment', label: 'Entertainment' },
+    { value: 'shopping', label: 'Shopping' },
+    { value: 'utilities', label: 'Utilities / Bills' },
+    { value: 'healthcare', label: 'Healthcare' },
+    { value: 'education', label: 'Education' },
+    { value: 'travel', label: 'Travel' },
+    { value: 'other', label: 'Other' },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -57,13 +59,17 @@ const AddExpense: React.FC = () => {
     }
 
     try {
-      await addExpense({
+      const payload = {
         title: formData.title.trim(),
         amount,
         category: formData.category,
         date: formData.date,
-        description: formData.description.trim(),
-      });
+        ...(formData.description.trim()
+          ? { description: formData.description.trim() }
+          : {}),
+      };
+
+      await addExpense(payload);
 
       // Reset form after successful submission
       setFormData({
@@ -74,7 +80,12 @@ const AddExpense: React.FC = () => {
         description: '',
       });
     } catch (err) {
-      setError('Failed to create expense. Please try again.');
+      const axiosError = err as AxiosError<any>;
+      const responseMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.detail;
+      setError(responseMessage || 'Failed to create expense. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -161,8 +172,8 @@ const AddExpense: React.FC = () => {
                   >
                     <option value="">Select a category</option>
                     {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
+                      <option key={category.value} value={category.value}>
+                        {category.label}
                       </option>
                     ))}
                   </select>
