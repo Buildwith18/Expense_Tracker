@@ -257,18 +257,28 @@ class BudgetManagementView(generics.GenericAPIView):
         is_budget_exceeded = current_month_expenses > monthly_budget
 
         return Response({
+            'monthly_budget': float(monthly_budget),  # ✅ Add top-level field for compatibility
             'user': {
+                'id': user.id,
                 'username': user.username,
                 'email': user.email,
                 'currency': user.currency,
                 'monthly_budget': float(monthly_budget),
+                'alert_threshold': alert_threshold,
+                'enable_alerts': user.enable_alerts,
+                'notifications_enabled': user.notifications_enabled,
+                'dark_mode': user.dark_mode,
+                'theme_color': user.theme_color,
+                'compact_mode': user.compact_mode,
             },
             'budget_stats': {
+                'monthly_budget': float(monthly_budget),  # ✅ Also in budget_stats
                 'current_month_expenses': float(current_month_expenses),
                 'budget_remaining': float(budget_remaining),
                 'budget_percentage': round(budget_percentage, 2),
                 'daily_average': float(daily_average),
                 'projected_spending': round(projected_spending, 2),
+                'days_in_month': days_in_month,
             },
             'alerts': {
                 'is_alert_threshold_reached': is_alert_threshold_reached,
@@ -280,15 +290,33 @@ class BudgetManagementView(generics.GenericAPIView):
     def put(self, request):
         user = request.user
         data = request.data
+        
+        # Update user fields
         fields = [
             'monthly_budget', 'alert_threshold', 'enable_alerts',
             'notifications_enabled', 'dark_mode', 'theme_color', 'compact_mode'
         ]
+        
+        updated_fields = []
         for field in fields:
             if field in data:
                 setattr(user, field, data[field])
+                updated_fields.append(field)
+        
         user.save()
-        return Response({'message': 'Budget settings updated successfully'})
+        
+        # Return updated user data
+        return Response({
+            'message': 'Budget settings updated successfully',
+            'monthly_budget': float(user.monthly_budget),
+            'user': {
+                'id': user.id,
+                'monthly_budget': float(user.monthly_budget),
+                'alert_threshold': user.alert_threshold,
+                'enable_alerts': user.enable_alerts,
+            },
+            'updated_fields': updated_fields
+        })
 
 # from django.core.mail import send_mail
 # from django.conf import settings

@@ -58,29 +58,47 @@ const Dashboard: React.FC = () => {
   const fetchBudgetSettings = async () => {
     try {
       const settings = await userApi.getSettings();
-      // Backend returns budget_stats, user, and alerts
-      const monthlyBudget = settings.user?.monthly_budget || settings.monthly_budget || 15000;
+      // Backend returns budget_stats, user, and alerts with monthly_budget in multiple places
+      const monthlyBudget = Number(
+        settings.monthly_budget || 
+        settings.user?.monthly_budget || 
+        settings.budget_stats?.monthly_budget || 
+        15000
+      );
+      
+      console.log('[Dashboard] Fetched budget from API:', monthlyBudget);
+      
       setBudgetData(prev => ({
         ...prev,
         monthlyBudget: monthlyBudget
       }));
       updateBudgetFromExpenses(monthlyBudget);
     } catch (settingsError) {
-      console.warn('Failed to fetch settings, using defaults:', settingsError);
+      console.warn('[Dashboard] Failed to fetch settings, using defaults:', settingsError);
       // Use default budget if API fails
-      updateBudgetFromExpenses(15000);
+      const defaultBudget = 25000;
+      setBudgetData(prev => ({
+        ...prev,
+        monthlyBudget: defaultBudget
+      }));
+      updateBudgetFromExpenses(defaultBudget);
     }
   };
 
   const refreshDashboardData = async () => {
     try {
       setIsLoading(true);
+      setError('');
+      console.log('[Dashboard] Refreshing all data...');
+      
       // Refresh expenses from context
       await refreshExpenses();
       // Also refresh budget settings
       await fetchBudgetSettings();
+      
+      console.log('[Dashboard] Data refresh complete');
     } catch (err) {
-      console.error('Failed to refresh dashboard data:', err);
+      console.error('[Dashboard] Failed to refresh dashboard data:', err);
       setError('Failed to refresh data');
     } finally {
       setIsLoading(false);
