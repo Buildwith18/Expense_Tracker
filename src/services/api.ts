@@ -277,17 +277,28 @@ export const recurringApi = {
   async getRecurringExpenses(): Promise<RecurringExpense[]> {
     try {
       const res = await api.get("/recurring/");
+      console.log('[RecurringAPI] Fetched recurring expenses:', res.data);
+      
+      // Ensure we return an array
+      if (!Array.isArray(res.data)) {
+        console.warn('[RecurringAPI] Response is not an array:', res.data);
+        return [];
+      }
+      
       return res.data;
     } catch (error: any) {
       console.error("Failed to fetch recurring expenses:", error.response?.data || error.message);
-      throw error;
+      // Return empty array on error
+      return [];
     }
   },
   async createRecurringExpense(data: RecurringExpense): Promise<RecurringExpense> {
     try {
       const res = await api.post("/recurring/", data);
+      console.log('[RecurringAPI] Created recurring expense:', res.data);
       toast.success("Recurring expense created!");
-      return res.data.recurring_expense || res.data;
+      // Backend now returns data directly, not wrapped
+      return res.data;
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.response?.data?.detail || "Failed to create recurring expense";
       toast.error(errorMsg);
@@ -298,8 +309,10 @@ export const recurringApi = {
   async updateRecurringExpense(id: string, data: Partial<RecurringExpense>): Promise<RecurringExpense> {
     try {
       const res = await api.put(`/recurring/${id}/`, data);
+      console.log('[RecurringAPI] Updated recurring expense:', res.data);
       toast.success("Recurring expense updated!");
-      return res.data.recurring_expense || res.data;
+      // Backend now returns data directly
+      return res.data;
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || "Failed to update recurring expense";
       toast.error(errorMsg);
@@ -319,7 +332,9 @@ export const recurringApi = {
   async toggleActive(id: string): Promise<RecurringExpense> {
     try {
       const res = await api.post(`/recurring/${id}/toggle_active/`);
-      return res.data.recurring_expense || res.data;
+      console.log('[RecurringAPI] Toggled recurring expense:', res.data);
+      // Backend now returns data directly
+      return res.data;
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || "Failed to toggle recurring expense";
       toast.error(errorMsg);

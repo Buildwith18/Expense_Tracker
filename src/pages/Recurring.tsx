@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { recurringApi, RecurringExpense } from '../services/api';
+import { useExpenses } from '../context/ExpenseContext';
 import Layout from '../components/Layout/Layout';
 import { Plus, RefreshCw, Edit, Trash2, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
 
 const Recurring: React.FC = () => {
+  const { refreshExpenses } = useExpenses();
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecurring, setEditingRecurring] = useState<RecurringExpense | null>(null);
@@ -236,16 +239,33 @@ const Recurring: React.FC = () => {
             <button
               onClick={async () => {
                 try {
-                  await recurringApi.generateRecurringExpenses();
-                  await fetchRecurringExpenses();
+                  setIsGenerating(true);
+                  console.log('[Recurring] Generating recurring expenses...');
+                  
+                  const result = await recurringApi.generateRecurringExpenses();
+                  
+                  console.log('[Recurring] Generation result:', result);
+                  toast.success(`Generated ${result.generated_count} expense(s)!`);
+                  
+                  // Refresh both recurring list and main expenses
+                  await Promise.all([
+                    fetchRecurringExpenses(),
+                    refreshExpenses()
+                  ]);
+                  
+                  console.log('[Recurring] Data refreshed after generation');
                 } catch (error) {
-                  console.error('Failed to generate expenses:', error);
+                  console.error('[Recurring] Failed to generate expenses:', error);
+                  toast.error('Failed to generate expenses');
+                } finally {
+                  setIsGenerating(false);
                 }
               }}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              disabled={isGenerating}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Generate Expenses</span>
+              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+              <span>{isGenerating ? 'Generating...' : 'Generate Expenses'}</span>
             </button>
             <button
               onClick={() => setShowAddForm(true)}

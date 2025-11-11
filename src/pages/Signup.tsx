@@ -53,13 +53,25 @@ const Signup: React.FC = () => {
     }
 
     try {
-      await register(formData);
-      // Small delay to ensure state is updated
+      await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      });
+      
+      // Small delay to ensure state is updated, then navigate
       setTimeout(() => {
         navigate('/dashboard', { replace: true });
       }, 100);
-    } catch (err) {
-      setError('Registration failed. Please try again.');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.password?.[0] ||
+                      err.response?.data?.email?.[0] ||
+                      err.response?.data?.username?.[0] ||
+                      'Registration failed. Please try again.';
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }

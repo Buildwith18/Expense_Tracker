@@ -9,6 +9,7 @@ class RecurringExpenseSerializer(serializers.ModelSerializer):
     Serializer for RecurringExpense model
     """
     user = serializers.StringRelatedField(read_only=True)
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=False)
     
     class Meta:
         model = RecurringExpense
@@ -52,15 +53,21 @@ class ExpenseSerializer(serializers.ModelSerializer):
     Serializer for Expense model
     """
     user = serializers.StringRelatedField(read_only=True)
+    userId = serializers.SerializerMethodField()
     formatted_amount = serializers.ReadOnlyField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=False)
     
     class Meta:
         model = Expense
         fields = [
-            'id', 'user', 'title', 'amount', 'category', 'date',
+            'id', 'user', 'userId', 'title', 'amount', 'category', 'date',
             'description', 'formatted_amount', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'userId', 'created_at', 'updated_at']
+    
+    def get_userId(self, obj):
+        """Return user ID as string to match frontend expectations"""
+        return str(obj.user.id)
 
     def validate_amount(self, value):
         """

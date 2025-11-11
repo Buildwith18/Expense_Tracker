@@ -16,6 +16,7 @@ interface AuthContextType {
     password: string;
     firstName: string;
     lastName: string;
+    confirmPassword?: string;
   }) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => Promise<void>;
@@ -93,20 +94,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password: string;
     firstName: string;
     lastName: string;
+    confirmPassword?: string;
   }) => {
     try {
       setIsLoading(true);
-      await api.post("/register/", {
+      const response = await api.post("/register/", {
         username: userData.username,
         email: userData.email,
         password: userData.password,
+        password_confirm: userData.confirmPassword || userData.password,
         first_name: userData.firstName,
         last_name: userData.lastName,
+        currency: 'INR',
       });
-      toast.success("Account created successfully! You can now log in.");
+      
+      console.log("[Auth] Registration response:", response.data);
+      
+      // Check if tokens are returned (auto-login)
+      const tokens = response.data.tokens || response.data;
+      if (tokens.access && tokens.refresh) {
+        localStorage.setItem("auth_token", tokens.access);
+        localStorage.setItem("refresh_token", tokens.refresh);
+        
+        const userInfo = response.data.user;
+        localStorage.setItem("user_data", JSON.stringify(userInfo));
+        setUser(userInfo);
+        setIsAuthenticated(true);
+        
+        toast.success("Account created and logged in successfully!");
+      } else {
+        toast.success("Account created successfully! You can now log in.");
+      }
     } catch (error: any) {
       console.error("[Auth] Registration failed:", error.response?.data || error.message);
-      toast.error("Registration failed. Try again.");
+      
+      // Better error handling
+      const errorMsg = error.response?.data?.password?.[0] ||
+                      error.response?.data?.email?.[0] ||
+                      error.response?.data?.username?.[0] ||
+                      error.response?.data?.detail ||
+                      "Registration failed. Try again.";
+      toast.error(errorMsg);
       throw error;
     } finally {
       setIsLoading(false);

@@ -310,22 +310,45 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Return recurring expenses for the current user only"""
-        return RecurringExpense.objects.filter(user=self.request.user)
+        queryset = RecurringExpense.objects.filter(user=self.request.user).order_by('-created_at')
+        print(f"📋 RecurringExpenseViewSet.get_queryset() - User: {self.request.user.email}, Count: {queryset.count()}")
+        return queryset
+    
+    def list(self, request, *args, **kwargs):
+        """List all recurring expenses for authenticated user"""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        print(f"📤 Returning {len(serializer.data)} recurring expenses for user {request.user.email}")
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         """Save recurring expense with current user"""
+        # Set next_date to start_date if not provided
+        if 'next_date' not in serializer.validated_data:
+            serializer.validated_data['next_date'] = serializer.validated_data['start_date']
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """Create a new recurring expense"""
+        print(f"📝 Creating recurring expense for user: {request.user.email}")
+        print(f"📝 Request data: {request.data}")
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
+        # Set next_date to start_date if not provided
+        if 'next_date' not in serializer.validated_data:
+            serializer.validated_data['next_date'] = serializer.validated_data['start_date']
+        
         recurring_expense = serializer.save(user=request.user)
         
-        return Response({
-            'message': 'Recurring expense created successfully',
-            'recurring_expense': RecurringExpenseSerializer(recurring_expense).data
-        }, status=status.HTTP_201_CREATED)
+        # Return the serialized data directly (includes id, amount as number, etc.)
+        response_data = RecurringExpenseSerializer(recurring_expense).data
+        
+        print(f"✅ Created recurring expense ID={recurring_expense.id}: {recurring_expense.title} for user {request.user.email}")
+        print(f"✅ Response data: {response_data}")
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         """Update a recurring expense"""
@@ -335,10 +358,7 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        return Response({
-            'message': 'Recurring expense updated successfully',
-            'recurring_expense': serializer.data
-        })
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         """Delete a recurring expense"""
@@ -355,10 +375,8 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
         recurring_expense.is_active = not recurring_expense.is_active
         recurring_expense.save()
         
-        return Response({
-            'message': f'Recurring expense {"activated" if recurring_expense.is_active else "deactivated"}',
-            'is_active': recurring_expense.is_active
-        })
+        # Return full serialized data to match frontend expectations
+        return Response(RecurringExpenseSerializer(recurring_expense).data)
 
     @action(detail=False, methods=['post'])
     def generate_expenses(self, request):
@@ -400,17 +418,26 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def generate_all_recurring_expenses(self, request):
         """Generate all recurring expenses for the current month"""
+        print(f"\n🔄 Generate all recurring expenses requested by user: {request.user.email}")
+        
         today = timezone.now().date()
         current_month_start = today.replace(day=1)
         current_month_end = (current_month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        
+        print(f"📅 Current month: {current_month_start} to {current_month_end}")
         
         active_recurring = self.get_queryset().filter(
             is_active=True,
             start_date__lte=current_month_end
         )
         
+        print(f"📋 Found {active_recurring.count()} active recurring expenses")
+        
         generated_count = 0
+        generated_expenses = []
+        
         for recurring in active_recurring:
+            print(f"  Processing: {recurring.title} (next_date: {recurring.next_date})")
             # Generate expenses for each occurrence in the current month
             current_date = max(recurring.start_date, current_month_start)
             
@@ -424,12 +451,12 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
                     # Check if expense already exists for this date
                     existing_expense = Expense.objects.filter(
                         user=recurring.user,
-                        title=f"{recurring.title} (Auto-generated)",
+                        title__contains=recurring.title,
                         date=current_date
                     ).exists()
                     
                     if not existing_expense:
-                        Expense.objects.create(
+                        new_expense = Expense.objects.create(
                             user=recurring.user,
                             title=f"{recurring.title} (Auto-generated)",
                             amount=recurring.amount,
@@ -438,13 +465,21 @@ class RecurringExpenseViewSet(viewsets.ModelViewSet):
                             description=f"Auto-generated from recurring expense: {recurring.description or ''}"
                         )
                         generated_count += 1
+                        generated_expenses.append(new_expense.title)
+                        print(f"    ✅ Generated expense: {new_expense.title} - ₹{new_expense.amount} on {current_date}")
+                    else:
+                        print(f"    ⏭️  Skipped (already exists): {recurring.title} on {current_date}")
                 
                 # Move to next occurrence
                 current_date = self._get_next_occurrence_date(recurring, current_date)
         
+        print(f"\n✅ Generation complete: {generated_count} expenses created")
+        print(f"📝 Generated expenses: {generated_expenses}")
+        
         return Response({
             'message': f'Generated {generated_count} recurring expenses for current month',
-            'generated_count': generated_count
+            'generated_count': generated_count,
+            'generated_expenses': generated_expenses
         })
 
     def _should_generate_on_date(self, recurring, date):

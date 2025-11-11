@@ -30,7 +30,7 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [budgetData, setBudgetData] = useState({
-    monthlyBudget: 15000,
+    monthlyBudget: 0,  // Start with 0, will be loaded from API
     currentMonthExpenses: 0,
     budgetRemaining: 0,
     budgetPercentage: 0
@@ -58,15 +58,17 @@ const Dashboard: React.FC = () => {
   const fetchBudgetSettings = async () => {
     try {
       const settings = await userApi.getSettings();
+      console.log('[Dashboard] Received settings from API:', settings);
+      
       // Backend returns budget_stats, user, and alerts with monthly_budget in multiple places
       const monthlyBudget = Number(
         settings.monthly_budget || 
         settings.user?.monthly_budget || 
         settings.budget_stats?.monthly_budget || 
-        15000
+        25000
       );
       
-      console.log('[Dashboard] Fetched budget from API:', monthlyBudget);
+      console.log('[Dashboard] Extracted budget:', monthlyBudget);
       
       setBudgetData(prev => ({
         ...prev,
@@ -74,7 +76,7 @@ const Dashboard: React.FC = () => {
       }));
       updateBudgetFromExpenses(monthlyBudget);
     } catch (settingsError) {
-      console.warn('[Dashboard] Failed to fetch settings, using defaults:', settingsError);
+      console.error('[Dashboard] Failed to fetch settings:', settingsError);
       // Use default budget if API fails
       const defaultBudget = 25000;
       setBudgetData(prev => ({
@@ -107,14 +109,23 @@ const Dashboard: React.FC = () => {
 
   const updateBudgetFromExpenses = (budget?: number) => {
     const currentMonthExpenses = getCurrentMonthExpenses(contextExpenses);
-    const actualCurrentMonthTotal = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const monthlyBudget = budget || budgetData.monthlyBudget;
+    const actualCurrentMonthTotal = currentMonthExpenses.reduce((sum, expense) => {
+      const amount = Number(expense.amount) || 0;
+      return sum + amount;
+    }, 0);
+    const monthlyBudget = Number(budget || budgetData.monthlyBudget) || 25000;
+    
+    console.log('[Dashboard] Updating budget from expenses:', {
+      expenseCount: currentMonthExpenses.length,
+      total: actualCurrentMonthTotal,
+      budget: monthlyBudget
+    });
     
     setBudgetData(prev => ({
       monthlyBudget: budget || prev.monthlyBudget,
       currentMonthExpenses: actualCurrentMonthTotal,
       budgetRemaining: monthlyBudget - actualCurrentMonthTotal,
-      budgetPercentage: (actualCurrentMonthTotal / monthlyBudget) * 100
+      budgetPercentage: monthlyBudget > 0 ? (actualCurrentMonthTotal / monthlyBudget) * 100 : 0
     }));
   };
 
@@ -145,7 +156,12 @@ const Dashboard: React.FC = () => {
 
   // Use ONLY the calculated current month total
   const totalExpenses = useMemo(() => {
-    return currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const total = currentMonthExpenses.reduce((sum, expense) => {
+      const amount = Number(expense.amount) || 0;
+      return sum + amount;
+    }, 0);
+    console.log('[Dashboard] Calculated total expenses:', total, 'from', currentMonthExpenses.length, 'expenses');
+    return total;
   }, [currentMonthExpenses]);
 
   const budgetRemaining = useMemo(() => {
@@ -175,15 +191,19 @@ const Dashboard: React.FC = () => {
   const pieChartData = useMemo(() => {
     const categoryData = currentMonthExpenses.reduce((acc, expense) => {
       const category = expense.category;
-      acc[category] = (acc[category] || 0) + expense.amount;
+      const amount = Number(expense.amount) || 0;
+      acc[category] = (acc[category] || 0) + amount;
       return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(categoryData).map(([name, value]) => ({
+    const chartData = Object.entries(categoryData).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      value,
+      value: Number(value) || 0,
       color: '#3B82F6'
     }));
+    
+    console.log('[Dashboard] Pie chart data:', chartData);
+    return chartData;
   }, [currentMonthExpenses]);
 
   // Monthly trend mock data (replace with real API if needed)

@@ -85,11 +85,12 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       const expenses = await expenseApi.getExpenses();
+      console.log('[ExpenseContext] Expenses fetched successfully:', expenses.length, 'expenses');
+      console.log('[ExpenseContext] First expense sample:', expenses[0]);
       dispatch({ type: 'SET_EXPENSES', payload: expenses });
-      console.log('[ExpenseContext] Expenses fetched successfully');
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to fetch expenses' });
-      console.error('Failed to fetch expenses:', error);
+      console.error('[ExpenseContext] Failed to fetch expenses:', error);
     }
   };
 
@@ -97,8 +98,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       const newExpense = await expenseApi.createExpense(expenseData);
+      console.log('[ExpenseContext] Added new expense:', newExpense);
       dispatch({ type: 'ADD_EXPENSE', payload: newExpense });
       toast.success('Expense added successfully!');
+      // Refresh to ensure we have latest data
+      await refreshExpenses();
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to add expense' });
       toast.error('Failed to add expense');
