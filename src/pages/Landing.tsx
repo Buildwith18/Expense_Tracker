@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -13,12 +13,15 @@ import {
   Smartphone,
   Zap,
   Globe,
-  Bell
+  Bell,
+  Menu,
+  X
 } from 'lucide-react';
 
 const Landing: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -92,18 +95,22 @@ const Landing: React.FC = () => {
     <div className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 scroll-smooth">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 transition-colors">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <CreditCard className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                ExpenseTracker
-              </span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="flex justify-between items-center h-14 sm:h-16 md:h-20">
+            {/* Logo - Centered on mobile */}
+            <div className="flex items-center flex-1 justify-center sm:justify-start">
+              <Link to="/" className="flex items-center space-x-2" onClick={() => setMobileMenuOpen(false)}>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <CreditCard className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <span className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  ExpenseTracker
+                </span>
+              </Link>
             </div>
             
-            <div className="flex items-center space-x-6">
+            {/* Desktop buttons - Hidden on mobile */}
+            <div className="hidden md:flex items-center space-x-6">
               <Link
                 to="/login"
                 className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 text-sm font-medium transition-colors"
@@ -117,78 +124,111 @@ const Landing: React.FC = () => {
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile hamburger menu */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
+
+          {/* Mobile menu drawer */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 dark:border-gray-800 py-4">
+              <div className="flex flex-col space-y-3">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 text-sm font-medium transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg text-center transition-all"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-24 md:py-32 overflow-hidden transition-colors">
+      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 py-12 sm:py-16 md:py-24 lg:py-32 overflow-hidden transition-colors">
         {/* Decorative Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
           <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-400/10 dark:bg-purple-500/5 rounded-full blur-3xl"></div>
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-6 md:px-12 lg:px-24 text-center">
-          <div className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium mb-8 animate-fade-in">
-            <Zap className="w-4 h-4 mr-2" />
-            Trusted by thousands of users across India
+        <div className="relative max-w-screen-lg mx-auto px-4 sm:px-6 md:px-12 lg:px-24 text-center">
+          <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs sm:text-sm font-medium mb-6 sm:mb-8 animate-fade-in">
+            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+            <span className="whitespace-nowrap">Trusted by thousands of users across India</span>
           </div>
           
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 dark:text-white mb-6 leading-tight animate-slide-up">
-            Take Control of Your <br />
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-gray-900 dark:text-white mb-4 sm:mb-6 leading-tight animate-slide-up px-2">
+            Take Control of Your <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
               Finances
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 md:mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in px-2">
             Track expenses, analyze spending patterns, and achieve your financial goals with 
             our comprehensive expense management platform designed for India.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12 animate-slide-up">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-8 sm:mb-12 animate-slide-up px-4">
             <Link
               to="/signup"
-              className="group w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105"
+              className="group w-full sm:w-auto max-w-xs sm:max-w-none inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 text-sm sm:text-base"
             >
               Start Free Today
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               to="/login"
-              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-400 text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-semibold rounded-xl transition-all"
+              className="w-full sm:w-auto max-w-xs sm:max-w-none inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-400 text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-semibold rounded-xl transition-all text-sm sm:text-base"
             >
               Sign In
             </Link>
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 md:gap-8 text-xs sm:text-sm text-gray-500 dark:text-gray-400 px-4">
             <div className="flex items-center">
-              <Check className="w-4 h-4 text-green-500 mr-2" />
-              No credit card required
+              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="whitespace-nowrap">No credit card required</span>
             </div>
             <div className="flex items-center">
-              <Check className="w-4 h-4 text-green-500 mr-2" />
-              Free forever
+              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="whitespace-nowrap">Free forever</span>
             </div>
             <div className="flex items-center">
-              <Check className="w-4 h-4 text-green-500 mr-2" />
-              Secure & encrypted
+              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1.5 sm:mr-2 flex-shrink-0" />
+              <span className="whitespace-nowrap">Secure & encrypted</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 md:py-28 bg-white dark:bg-gray-900 transition-colors">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-28 bg-white dark:bg-gray-900 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 px-2">
               Everything You Need to Manage Your Money
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto px-2">
               Powerful features designed to make expense tracking effortless and insightful.
             </p>
           </div>
@@ -214,14 +254,14 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 md:py-28 bg-gray-50 dark:bg-gray-950 transition-colors">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-28 bg-gray-50 dark:bg-gray-950 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
             <div className="order-2 lg:order-1">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 px-2">
                 Why Choose ExpenseTracker?
               </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mb-10 leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-6 sm:mb-8 md:mb-10 leading-relaxed px-2">
                 Join thousands of users who have transformed their financial habits 
                 with our intuitive expense tracking platform.
               </p>
@@ -239,32 +279,32 @@ const Landing: React.FC = () => {
             </div>
 
             <div className="order-1 lg:order-2">
-              <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 rounded-3xl p-10 text-white shadow-2xl">
+              <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 text-white shadow-2xl">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                 <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
                 
                 <div className="relative">
-                  <div className="inline-flex items-center px-4 py-2 bg-white/20 rounded-full text-sm font-medium mb-6">
-                    <Bell className="w-4 h-4 mr-2" />
-                    Start Your Journey
+                  <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 rounded-full text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+                    <Bell className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                    <span className="whitespace-nowrap">Start Your Journey</span>
                   </div>
                   
-                  <h3 className="text-3xl md:text-4xl font-bold mb-5">Ready to Get Started?</h3>
-                  <p className="text-blue-100 dark:text-blue-50 mb-8 leading-relaxed text-lg">
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5">Ready to Get Started?</h3>
+                  <p className="text-blue-100 dark:text-blue-50 mb-6 sm:mb-8 leading-relaxed text-base sm:text-lg">
                     Create your free account today and start taking control of your 
                     finances with our powerful expense tracking tools.
                   </p>
                   
                   <Link
                     to="/signup"
-                    className="group inline-flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="group inline-flex items-center justify-center w-full sm:w-auto max-w-xs sm:max-w-none px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base"
                   >
                     Get Started Now
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                   
-                  <div className="mt-6 text-blue-100 dark:text-blue-50 text-sm">
-                    No credit card required • Free forever
+                  <div className="mt-4 sm:mt-6 text-blue-100 dark:text-blue-50 text-xs sm:text-sm">
+                    <span className="whitespace-nowrap">No credit card required</span> <span className="hidden sm:inline">•</span> <span className="whitespace-nowrap">Free forever</span>
                   </div>
                 </div>
               </div>
@@ -274,13 +314,13 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 md:py-28 bg-white dark:bg-gray-900 transition-colors">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-28 bg-white dark:bg-gray-900 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 px-2">
               What Our Users Say
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-2">
               Thousands of users trust ExpenseTracker to manage their finances
             </p>
           </div>
@@ -315,64 +355,64 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 transition-colors">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center text-white">
+      <section className="py-12 sm:py-16 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 md:gap-12 text-center text-white">
             <div>
-              <div className="text-5xl md:text-6xl font-bold mb-2">10K+</div>
-              <div className="text-blue-100 dark:text-blue-200 text-lg">Active Users</div>
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold mb-2">10K+</div>
+              <div className="text-blue-100 dark:text-blue-200 text-sm sm:text-base md:text-lg">Active Users</div>
             </div>
             <div>
-              <div className="text-5xl md:text-6xl font-bold mb-2">₹50Cr+</div>
-              <div className="text-blue-100 dark:text-blue-200 text-lg">Expenses Tracked</div>
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold mb-2">₹50Cr+</div>
+              <div className="text-blue-100 dark:text-blue-200 text-sm sm:text-base md:text-lg">Expenses Tracked</div>
             </div>
             <div>
-              <div className="text-5xl md:text-6xl font-bold mb-2">99.9%</div>
-              <div className="text-blue-100 dark:text-blue-200 text-lg">Uptime</div>
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold mb-2">99.9%</div>
+              <div className="text-blue-100 dark:text-blue-200 text-sm sm:text-base md:text-lg">Uptime</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 md:py-32 bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 dark:from-gray-950 dark:via-blue-950 dark:to-indigo-950 text-white transition-colors">
-        <div className="max-w-4xl mx-auto px-6 md:px-12 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-12 sm:py-16 md:py-24 lg:py-32 bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 dark:from-gray-950 dark:via-blue-950 dark:to-indigo-950 text-white transition-colors">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-12 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 px-2">
             Ready to Transform Your Financial Life?
           </h2>
-          <p className="text-xl text-blue-100 dark:text-blue-200 mb-10 leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-blue-100 dark:text-blue-200 mb-6 sm:mb-8 md:mb-10 leading-relaxed px-2">
             Join thousands of users who are already saving more and stressing less.
           </p>
           
           <Link
             to="/signup"
-            className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-700 font-bold text-lg rounded-xl hover:bg-gray-100 transition-all shadow-2xl transform hover:scale-105"
+            className="inline-flex items-center justify-center w-full sm:w-auto max-w-xs sm:max-w-none px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 bg-white text-blue-700 font-bold text-base sm:text-lg rounded-xl hover:bg-gray-100 transition-all shadow-2xl transform hover:scale-105"
           >
             Create Free Account
-            <ArrowRight className="ml-3 w-6 h-6" />
+            <ArrowRight className="ml-2 sm:ml-3 w-5 h-5 sm:w-6 sm:h-6" />
           </Link>
           
-          <p className="mt-6 text-blue-200 dark:text-blue-300 text-sm">
-            No credit card required • Set up in under 2 minutes
+          <p className="mt-4 sm:mt-6 text-blue-200 dark:text-blue-300 text-xs sm:text-sm px-2">
+            <span className="whitespace-nowrap">No credit card required</span> <span className="hidden sm:inline">•</span> <span className="whitespace-nowrap">Set up in under 2 minutes</span>
           </p>
         </div>
       </section>
 
       {/* Demo Account Info */}
-      <section className="py-16 bg-blue-50 dark:bg-gray-800 transition-colors">
-        <div className="max-w-5xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-10 shadow-xl border border-gray-200 dark:border-gray-700 text-center">
-            <Target className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+      <section className="py-12 sm:py-16 bg-blue-50 dark:bg-gray-800 transition-colors">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 sm:p-8 md:p-10 shadow-xl border border-gray-200 dark:border-gray-700 text-center">
+            <Target className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">
               Try Demo Account
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 text-lg">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-6">
               Experience all features without creating an account
             </p>
-            <div className="inline-block bg-gray-50 dark:bg-gray-800 px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="inline-block bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-3 sm:py-4 rounded-xl border border-gray-200 dark:border-gray-700 max-w-full overflow-x-auto">
+              <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                 <strong className="text-blue-600 dark:text-blue-400">Email:</strong> demo@example.com 
-                <span className="mx-3 text-gray-400">|</span>
+                <span className="mx-2 sm:mx-3 text-gray-400">|</span>
                 <strong className="text-blue-600 dark:text-blue-400">Password:</strong> demo123
               </p>
             </div>
@@ -381,9 +421,9 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-16 transition-colors">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12 sm:py-16 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 md:gap-12 mb-8 sm:mb-12">
             {/* Brand */}
             <div>
               <div className="flex items-center space-x-3 mb-4">
