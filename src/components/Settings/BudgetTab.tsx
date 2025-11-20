@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { userApi } from '../../services/api';
-import { DollarSign, Save, AlertTriangle } from 'lucide-react';
+import { Save, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const BudgetTab: React.FC = () => {
@@ -86,8 +86,8 @@ const BudgetTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Budget Settings</h3>
-        <p className="text-sm text-gray-600">Set your monthly budget goals and spending limits.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Budget Settings</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Set your monthly budget goals and spending limits.</p>
       </div>
 
       {/* Current Budget Status */}

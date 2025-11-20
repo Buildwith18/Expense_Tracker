@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { userApi } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 import { Moon, Sun, Palette, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AppearanceTab: React.FC = () => {
-  const { updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [appearanceData, setAppearanceData] = useState({
@@ -23,13 +21,34 @@ const AppearanceTab: React.FC = () => {
     }
   }, [appearanceData.darkMode]);
 
-  // Load dark mode from localStorage immediately on mount
+  // Load dark mode from localStorage and backend on mount
   useEffect(() => {
-    const storedDarkMode = localStorage.getItem('darkMode');
-    if (storedDarkMode) {
-      const isDark = JSON.parse(storedDarkMode);
-      setAppearanceData(prev => ({ ...prev, darkMode: isDark }));
-    }
+    const loadInitialSettings = async () => {
+      // First, load from localStorage for immediate UI update
+      const storedDarkMode = localStorage.getItem('darkMode');
+      if (storedDarkMode) {
+        try {
+          const isDark = JSON.parse(storedDarkMode);
+          setAppearanceData(prev => ({ ...prev, darkMode: isDark }));
+        } catch (e) {
+          console.error('Failed to parse darkMode from localStorage:', e);
+        }
+      }
+      
+      // Then, fetch from backend to ensure consistency
+      try {
+        const data = await userApi.getSettings();
+        const backendDarkMode = data.preferences?.dark_mode;
+        if (backendDarkMode !== undefined) {
+          setAppearanceData(prev => ({ ...prev, darkMode: backendDarkMode }));
+          localStorage.setItem('darkMode', JSON.stringify(backendDarkMode));
+        }
+      } catch (error) {
+        console.error('Failed to load appearance settings from backend:', error);
+      }
+    };
+    
+    loadInitialSettings();
   }, []);
 
   const themeColors = [
@@ -73,18 +92,27 @@ const AppearanceTab: React.FC = () => {
     // Save to localStorage immediately for dark mode
     if (field === 'darkMode') {
       localStorage.setItem('darkMode', JSON.stringify(newValue));
+      // Apply dark mode immediately
+      if (newValue) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
     
     // Save to backend
     try {
       await userApi.updateSettings({
         preferences: {
-          ...appearanceData,
-          [field]: newValue,
+          dark_mode: field === 'darkMode' ? newValue : appearanceData.darkMode,
+          theme_color: field === 'themeColor' ? newValue : appearanceData.themeColor,
+          compact_mode: field === 'compactMode' ? newValue : appearanceData.compactMode,
         }
       });
+      toast.success(`${field === 'darkMode' ? 'Theme' : field === 'compactMode' ? 'Layout' : 'Setting'} updated!`);
     } catch (error) {
       console.error('Failed to save appearance setting:', error);
+      toast.error('Failed to save setting');
       // Revert on error
       setAppearanceData(prev => ({
         ...prev,
@@ -92,6 +120,11 @@ const AppearanceTab: React.FC = () => {
       }));
       if (field === 'darkMode') {
         localStorage.setItem('darkMode', JSON.stringify(!newValue));
+        if (!newValue) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       }
     }
   };
@@ -107,13 +140,15 @@ const AppearanceTab: React.FC = () => {
     try {
       await userApi.updateSettings({
         preferences: {
-          ...appearanceData,
-          themeColor: color,
+          dark_mode: appearanceData.darkMode,
+          theme_color: color,
+          compact_mode: appearanceData.compactMode,
         }
       });
-      toast.success('Theme updated!');
+      toast.success('Theme color updated!');
     } catch (error) {
       console.error('Failed to save theme:', error);
+      toast.error('Failed to save theme color');
     }
   };
 
@@ -122,7 +157,7 @@ const AppearanceTab: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const updatedSettings = await userApi.updateSettings({
+      await userApi.updateSettings({
         preferences: {
           dark_mode: appearanceData.darkMode,
           theme_color: appearanceData.themeColor,
@@ -132,8 +167,10 @@ const AppearanceTab: React.FC = () => {
       
       // Store dark mode preference in localStorage for immediate access
       localStorage.setItem('darkMode', JSON.stringify(appearanceData.darkMode));
+      toast.success('Appearance settings saved!');
     } catch (error) {
       console.error('Failed to update appearance settings:', error);
+      toast.error('Failed to save appearance settings');
     } finally {
       setIsLoading(false);
     }
@@ -150,8 +187,8 @@ const AppearanceTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Appearance</h3>
-        <p className="text-sm text-gray-600">Customize the look and feel of your dashboard.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Appearance</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Customize the look and feel of your dashboard.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -174,6 +211,8 @@ const AppearanceTab: React.FC = () => {
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
               appearanceData.darkMode ? 'bg-blue-600' : 'bg-gray-200'
             }`}
+            aria-label={appearanceData.darkMode ? 'Disable dark mode' : 'Enable dark mode'}
+            title={appearanceData.darkMode ? 'Disable dark mode' : 'Enable dark mode'}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -220,6 +259,8 @@ const AppearanceTab: React.FC = () => {
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
               appearanceData.compactMode ? 'bg-blue-600' : 'bg-gray-200'
             }`}
+            aria-label={appearanceData.compactMode ? 'Disable compact mode' : 'Enable compact mode'}
+            title={appearanceData.compactMode ? 'Disable compact mode' : 'Enable compact mode'}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

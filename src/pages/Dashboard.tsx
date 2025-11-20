@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useExpenses } from '../context/ExpenseContext';
-import { expenseApi, userApi } from '../services/api';
+import { userApi } from '../services/api';
 import { Expense } from '../types';
 import Layout from '../components/Layout/Layout';
 import StatCard from '../components/Cards/StatCard';
 import ProgressBar from '../components/ProgressBar';
 import CustomPieChart from '../components/Charts/PieChart';
-import CustomBarChart from '../components/Charts/BarChart';
 import { formatIndianCurrency } from '../utils/currency';
 import { 
   TrendingDown, 
-  TrendingUp, 
   DollarSign, 
   Calendar,
   Target,
@@ -229,26 +227,28 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
+      <div className="space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1 flex-1 min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
               Here's your financial overview for {format(new Date(), 'MMMM yyyy')}
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Current month expenses: {currentMonthExpenses.length} transactions totaling {formatIndianCurrency(totalExpenses)}
             </p>
           </div>
-          <button
-            onClick={refreshDashboardData}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refresh dashboard data"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
+            <button
+              onClick={refreshDashboardData}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh dashboard data"
+            >
+              <RefreshCw className={`h-4 w-4 flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="whitespace-nowrap">Refresh</span>
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -258,7 +258,7 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <StatCard
             title="Total Spent (This Month)"
             value={formatIndianCurrency(Number(totalExpenses) || 0)}

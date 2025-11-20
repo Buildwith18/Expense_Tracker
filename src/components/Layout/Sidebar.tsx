@@ -11,7 +11,12 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const menuItems = [
@@ -26,10 +31,24 @@ const Sidebar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col transition-colors duration-200">
+    <>
+      {/* Mobile Overlay */}
+      <div
+        className={`fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      {/* Sidebar - Fixed on desktop, overlay on mobile */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <Link to="/" className="flex items-center space-x-3">
+      <div className="p-3.5 border-b border-gray-200 dark:border-gray-800">
+        <Link to="/" className="flex items-center space-x-3" onClick={onClose}>
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-white" />
           </div>
@@ -41,7 +60,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -54,6 +73,7 @@ const Sidebar: React.FC = () => {
                       ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-r-2 border-blue-600'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
+                  onClick={onClose}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
@@ -76,7 +96,8 @@ const Sidebar: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+      </aside>
+    </>
   );
 };
 

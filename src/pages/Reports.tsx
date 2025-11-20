@@ -11,7 +11,6 @@ import {
   Target,
   Calendar,
   Download,
-  Filter,
   RefreshCw,
   BarChart3,
   PieChart as PieChartIcon
@@ -159,46 +158,46 @@ const Reports: React.FC = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
               Expense Reports & Analytics
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Analyze your spending patterns and financial trends
             </p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button 
               onClick={handleRefresh}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Refresh</span>
             </button>
             <button 
               onClick={handleExport}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
+              <Download className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Export CSV</span>
             </button>
           </div>
         </div>
 
         {/* View Toggle */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Chart View Options</h3>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Period:</span>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Chart View Options</h3>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full md:w-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Period:</span>
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(parseInt(e.target.value))}
-                  className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   title="Select number of periods to display"
                 >
                   <option value={6}>Last 6 {viewType === 'monthly' ? 'Months' : 'Years'}</option>
@@ -206,13 +205,13 @@ const Reports: React.FC = () => {
                   <option value={24}>Last 24 {viewType === 'monthly' ? 'Months' : 'Years'}</option>
                 </select>
               </div>
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                 <button
                   onClick={() => setViewType('monthly')}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     viewType === 'monthly'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                   }`}
                 >
                   Monthly
@@ -221,8 +220,8 @@ const Reports: React.FC = () => {
                   onClick={() => setViewType('yearly')}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     viewType === 'yearly'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                   }`}
                 >
                   Yearly
@@ -233,7 +232,7 @@ const Reports: React.FC = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <StatCard
             title="Total Expenses"
             value={formatIndianCurrency(reportsData.total_expenses)}
@@ -265,13 +264,13 @@ const Reports: React.FC = () => {
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Spending Trend Chart */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Spending Trend ({viewType === 'monthly' ? 'Monthly' : 'Yearly'})
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 flex-shrink-0" />
+                <span className="whitespace-nowrap">Spending Trend ({viewType === 'monthly' ? 'Monthly' : 'Yearly'})</span>
               </h3>
             </div>
             {barChartData.length > 0 ? (
@@ -280,17 +279,17 @@ const Reports: React.FC = () => {
                 title=""
               />
             ) : (
-              <div className="h-80 flex items-center justify-center text-gray-500">
+              <div className="h-80 flex items-center justify-center text-gray-500 dark:text-gray-400">
                 No spending data available for the selected period
               </div>
             )}
           </div>
 
           {/* Category Distribution Chart */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <PieChartIcon className="w-5 h-5 mr-2" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <PieChartIcon className="w-5 h-5 flex-shrink-0" />
                 Category Distribution
               </h3>
             </div>
@@ -300,7 +299,7 @@ const Reports: React.FC = () => {
                 title=""
               />
             ) : (
-              <div className="h-80 flex items-center justify-center text-gray-500">
+              <div className="h-80 flex items-center justify-center text-gray-500 dark:text-gray-400">
                 No category data available
               </div>
             )}
@@ -309,56 +308,56 @@ const Reports: React.FC = () => {
 
         {/* Category Breakdown Table */}
         {categorySummaryData?.category_data && categorySummaryData.category_data.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Category Breakdown</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Category Breakdown</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Amount
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Percentage
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Transactions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {categorySummaryData.category_data.map((item: any, index: number) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {item.category}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 font-semibold">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white font-semibold">
                           {formatIndianCurrency(item.amount)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                          <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2 mr-2">
                             <div 
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                              className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300" 
                               style={{ width: `${Math.min(item.percentage, 100)}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
                             {item.percentage.toFixed(1)}%
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
                           {item.count}
                         </div>
                       </td>
@@ -371,24 +370,24 @@ const Reports: React.FC = () => {
         )}
 
         {/* Summary */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Summary</h3>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 sm:p-6 border border-blue-200 dark:border-blue-800">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Summary</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <span className="text-gray-600">Total Amount Analyzed:</span>
-              <span className="ml-2 font-semibold text-gray-900">
+              <span className="text-gray-600 dark:text-gray-400">Total Amount Analyzed:</span>
+              <span className="ml-2 font-semibold text-gray-900 dark:text-white">
                 {formatIndianCurrency(categorySummaryData?.total_amount || 0)}
               </span>
             </div>
             <div>
-              <span className="text-gray-600">Categories Tracked:</span>
-              <span className="ml-2 font-semibold text-gray-900">
+              <span className="text-gray-600 dark:text-gray-400">Categories Tracked:</span>
+              <span className="ml-2 font-semibold text-gray-900 dark:text-white">
                 {categorySummaryData?.total_categories || 0}
               </span>
             </div>
             <div>
-              <span className="text-gray-600">View Type:</span>
-              <span className="ml-2 font-semibold text-gray-900 capitalize">
+              <span className="text-gray-600 dark:text-gray-400">View Type:</span>
+              <span className="ml-2 font-semibold text-gray-900 dark:text-white capitalize">
                 {viewType} ({selectedPeriod} periods)
               </span>
             </div>

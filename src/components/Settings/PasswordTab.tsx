@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { userApi } from '../../services/api';
-import { Lock, Eye, EyeOff, Save, Mail, ArrowLeft } from 'lucide-react';
+import { Lock, Eye, EyeOff, Save, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PasswordTab: React.FC = () => {
@@ -114,11 +114,23 @@ const PasswordTab: React.FC = () => {
         new: false,
         confirm: false,
       });
+      setErrors({});
     } catch (error: any) {
-      if (error.response?.data?.current_password) {
-        setErrors({ currentPassword: 'Current password is incorrect' });
+      console.error('Password change error:', error);
+      const errorData = error.response?.data;
+      
+      if (errorData?.current_password) {
+        setErrors({ currentPassword: Array.isArray(errorData.current_password) ? errorData.current_password[0] : errorData.current_password });
+        toast.error('Current password is incorrect');
+      } else if (errorData?.new_password) {
+        setErrors({ newPassword: Array.isArray(errorData.new_password) ? errorData.new_password[0] : errorData.new_password });
+        toast.error('Invalid new password');
+      } else if (errorData?.detail) {
+        toast.error(errorData.detail);
+      } else if (errorData?.message) {
+        toast.error(errorData.message);
       } else {
-        toast.error('Failed to change password');
+        toast.error('Failed to change password. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -206,64 +218,66 @@ const PasswordTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Change Password</h3>
-        <p className="text-sm text-gray-600">Update your password to keep your account secure.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Change Password</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Update your password to keep your account secure.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Current Password */}
         <div>
-          <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Current Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
             <input
               type={showPasswords.current ? 'text' : 'password'}
               id="currentPassword"
               name="currentPassword"
               value={passwordData.currentPassword}
               onChange={handleChange}
-              className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.currentPassword ? 'border-red-300' : 'border-gray-300'
+              className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.currentPassword ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Enter your current password"
             />
             <button
               type="button"
               onClick={() => togglePasswordVisibility('current')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label={showPasswords.current ? 'Hide password' : 'Show password'}
             >
               {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
           {errors.currentPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.currentPassword}</p>
           )}
         </div>
 
         {/* New Password */}
         <div>
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
             <input
               type={showPasswords.new ? 'text' : 'password'}
               id="newPassword"
               name="newPassword"
               value={passwordData.newPassword}
               onChange={handleChange}
-              className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.newPassword ? 'border-red-300' : 'border-gray-300'
+              className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.newPassword ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Enter your new password"
             />
             <button
               type="button"
               onClick={() => togglePasswordVisibility('new')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label={showPasswords.new ? 'Hide password' : 'Show password'}
             >
               {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -290,45 +304,46 @@ const PasswordTab: React.FC = () => {
           )}
           
           {errors.newPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.newPassword}</p>
           )}
         </div>
 
         {/* Confirm Password */}
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Confirm New Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
             <input
               type={showPasswords.confirm ? 'text' : 'password'}
               id="confirmPassword"
               name="confirmPassword"
               value={passwordData.confirmPassword}
               onChange={handleChange}
-              className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+              className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.confirmPassword ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Confirm your new password"
             />
             <button
               type="button"
               onClick={() => togglePasswordVisibility('confirm')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              aria-label={showPasswords.confirm ? 'Hide password' : 'Show password'}
             >
               {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword}</p>
           )}
         </div>
 
         {/* Password Requirements */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">Password Requirements:</h4>
-          <ul className="text-sm text-blue-800 space-y-1">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">Password Requirements:</h4>
+          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
             <li className="flex items-center space-x-2">
               <span className={passwordData.newPassword.length >= 6 ? 'text-green-600' : 'text-gray-400'}>
                 {passwordData.newPassword.length >= 6 ? '✓' : '○'}
@@ -351,31 +366,31 @@ const PasswordTab: React.FC = () => {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center space-x-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-4 h-4 flex-shrink-0" />
             <span>{isLoading ? 'Updating...' : 'Update Password'}</span>
           </button>
         </div>
       </form>
 
       {/* Forgot Password Section */}
-      <div className="border-t pt-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">Forgot Password?</h3>
-            <p className="text-sm text-gray-600">Reset your password using your email address.</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Forgot Password?</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Reset your password using your email address.</p>
           </div>
           <button
             type="button"
             onClick={() => setShowForgotPassword(!showForgotPassword)}
-            className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+            className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors whitespace-nowrap"
           >
-            <Mail className="w-4 h-4" />
+            <Mail className="w-4 h-4 flex-shrink-0" />
             <span>{showForgotPassword ? 'Hide' : 'Show'} Reset Form</span>
           </button>
         </div>
@@ -384,25 +399,25 @@ const PasswordTab: React.FC = () => {
           <div className="space-y-4">
             {/* Email Input */}
             <div>
-              <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
                 <input
                   type="email"
                   id="forgotEmail"
                   name="email"
                   value={forgotPasswordData.email}
                   onChange={handleForgotPasswordChange}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                    errors.email ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="Enter your email address"
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
               )}
             </div>
 

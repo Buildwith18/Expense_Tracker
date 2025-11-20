@@ -222,7 +222,7 @@ const Recurring: React.FC = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 sm:space-y-8">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
             {error}
@@ -230,12 +230,12 @@ const Recurring: React.FC = () => {
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Recurring Expenses</h1>
-            <p className="text-gray-600 mt-1">Manage your recurring transactions and subscriptions</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Recurring Expenses</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage your recurring transactions and subscriptions</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <button
               onClick={async () => {
                 try {
@@ -262,45 +262,45 @@ const Recurring: React.FC = () => {
                 }
               }}
               disabled={isGenerating}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-              <span>{isGenerating ? 'Generating...' : 'Generate Expenses'}</span>
+              <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isGenerating ? 'animate-spin' : ''}`} />
+              <span className="whitespace-nowrap">{isGenerating ? 'Generating...' : 'Generate Expenses'}</span>
             </button>
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Recurring</span>
+              <Plus className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Add Recurring</span>
             </button>
           </div>
         </div>
 
         {/* Add Form Modal */}
         {(showAddForm || editingRecurring) && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 {editingRecurring ? 'Edit Recurring Expense' : 'Add Recurring Expense'}
               </h3>
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
                   <input
                     type="text"
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="e.g., Netflix Subscription"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
                     <input
                       type="number"
                       required
@@ -308,18 +308,18 @@ const Recurring: React.FC = () => {
                       step="0.01"
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       placeholder="0.00"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
                     <select
                       required
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       aria-label="Select category"
                     >
                       <option value="">Select</option>
@@ -330,13 +330,13 @@ const Recurring: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency</label>
                     <select
                       value={formData.frequency}
                       onChange={(e) => setFormData({ ...formData, frequency: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       aria-label="Select frequency"
                     >
                       {frequencies.map(freq => (
@@ -346,43 +346,43 @@ const Recurring: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
                     <input
                       type="date"
                       required
                       value={formData.start_date}
                       onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       title="Select start date for recurring expense"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date (Optional)</label>
                   <input
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="Leave empty for indefinite"
                     title="Select end date for recurring expense"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Leave empty if this is an ongoing subscription</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty if this is an ongoing subscription</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (Optional)</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     placeholder="Add any additional details..."
                   />
                 </div>
 
-                <div className="flex space-x-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <button
                     type="submit"
                     className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
@@ -394,7 +394,7 @@ const Recurring: React.FC = () => {
                     onClick={() => {
                       resetForm();
                     }}
-                    className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     Cancel
                   </button>
@@ -405,28 +405,28 @@ const Recurring: React.FC = () => {
         )}
 
         {/* Recurring Expenses List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           {!Array.isArray(recurringExpenses) || recurringExpenses.length === 0 ? (
-            <div className="text-center py-12">
-              <RefreshCw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No recurring expenses</h3>
-              <p className="text-gray-500 mb-4">Set up recurring transactions to automate your expense tracking.</p>
+            <div className="text-center py-12 px-4">
+              <RefreshCw className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No recurring expenses</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Set up recurring transactions to automate your expense tracking.</p>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 Add Your First Recurring Expense
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 dark:divide-gray-800">
               {Array.isArray(recurringExpenses) && recurringExpenses.map((expense) => (
-                <div key={expense.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
+                <div key={expense.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">{expense.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{expense.title}</h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(expense.category)}`}>
                           {expense.category.charAt(0).toUpperCase() + expense.category.slice(1)}
                         </span>
@@ -435,14 +435,14 @@ const Recurring: React.FC = () => {
                         </span>
                       </div>
                       
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span className="font-medium text-gray-900">{formatIndianCurrency(expense.amount)}</span>
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="font-medium text-gray-900 dark:text-white">{formatIndianCurrency(expense.amount)}</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
                           <span>Next: {new Date(expense.next_date).toLocaleDateString()}</span>
                         </div>
                         {expense.end_date && (
-                          <span className="text-gray-500">
+                          <span className="text-gray-500 dark:text-gray-400">
                             Ends: {new Date(expense.end_date).toLocaleDateString()}
                           </span>
                         )}
@@ -453,11 +453,11 @@ const Recurring: React.FC = () => {
                         </span>
                       </div>
                       {expense.description && (
-                        <p className="text-sm text-gray-600 mt-2">{expense.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{expense.description}</p>
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => toggleActive(expense.id)}
                         className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
@@ -470,7 +470,7 @@ const Recurring: React.FC = () => {
                       </button>
                       <button 
                         onClick={() => handleEdit(expense)}
-                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                        className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         title="Edit recurring expense"
                         aria-label="Edit recurring expense"
                       >
@@ -478,7 +478,7 @@ const Recurring: React.FC = () => {
                       </button>
                       <button 
                         onClick={() => handleDelete(expense.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         title="Delete recurring expense"
                         aria-label="Delete recurring expense"
                       >

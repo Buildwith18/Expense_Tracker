@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { userApi } from '../../services/api';
 import { User, Upload, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -75,7 +74,14 @@ const ProfileTab: React.FC = () => {
         formData.append('profile_picture', profilePicture);
         updateData = formData;
       } else {
-        updateData = profileData;
+        // Convert camelCase to snake_case for backend
+        updateData = {
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          username: profileData.username,
+          email: profileData.email,
+          currency: profileData.currency,
+        };
       }
 
       // Update via API and context
@@ -84,8 +90,11 @@ const ProfileTab: React.FC = () => {
       // Reset file input
       setProfilePicture(null);
       setPreviewUrl('');
-    } catch (error) {
+      
+      toast.success('Profile updated successfully!');
+    } catch (error: any) {
       console.error('Profile update failed:', error);
+      toast.error(error?.response?.data?.detail || 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -94,8 +103,8 @@ const ProfileTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Information</h3>
-        <p className="text-sm text-gray-600">Update your personal information and preferences.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Profile Information</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Update your personal information and preferences.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -113,13 +122,14 @@ const ProfileTab: React.FC = () => {
                 <User className="w-8 h-8 text-gray-400" />
               )}
             </div>
-            <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
+            <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full cursor-pointer hover:bg-blue-700 transition-colors" title="Upload profile picture">
               <Upload className="w-3 h-3" />
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 className="hidden"
+                aria-label="Upload profile picture"
               />
             </label>
           </div>
@@ -132,7 +142,7 @@ const ProfileTab: React.FC = () => {
         {/* Name Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               First Name
             </label>
             <input
@@ -141,11 +151,11 @@ const ProfileTab: React.FC = () => {
               name="firstName"
               value={profileData.firstName}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Last Name
             </label>
             <input
@@ -154,14 +164,14 @@ const ProfileTab: React.FC = () => {
               name="lastName"
               value={profileData.lastName}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
         </div>
 
         {/* Username */}
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Username
           </label>
           <input
@@ -170,13 +180,13 @@ const ProfileTab: React.FC = () => {
             name="username"
             value={profileData.username}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 
         {/* Email */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email Address
           </label>
           <input
@@ -185,13 +195,13 @@ const ProfileTab: React.FC = () => {
             name="email"
             value={profileData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 
         {/* Currency */}
         <div>
-          <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Preferred Currency
           </label>
           <select
@@ -199,7 +209,7 @@ const ProfileTab: React.FC = () => {
             name="currency"
             value={profileData.currency}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             {currencies.map((currency) => (
               <option key={currency.code} value={currency.code}>

@@ -9,12 +9,8 @@ import {
   Edit, 
   Trash2,
   Calendar,
-  DollarSign,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw
 } from 'lucide-react';
-import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { formatIndianCurrency } from '../utils/currency';
 
@@ -214,7 +210,7 @@ const History: React.FC = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 sm:space-y-8">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
             {error}
@@ -222,51 +218,51 @@ const History: React.FC = () => {
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Expense History</h1>
-            <p className="text-gray-600 mt-1">View your expenses grouped by month</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1 flex-1 min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Expense History</h1>
+            <p className="text-gray-600 dark:text-gray-300">View your expenses grouped by month</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
             <button
               onClick={fetchGroupedExpenses}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Refresh</span>
             </button>
             <button
               onClick={handleExportCSV}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
+              <Download className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Export CSV</span>
             </button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search expenses..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
 
             {/* Year Filter */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <select
                 value={selectedYear || ''}
                 onChange={(e) => setSelectedYear(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 title="Select year to filter expenses"
               >
                 <option value="">All Years</option>
@@ -278,11 +274,11 @@ const History: React.FC = () => {
 
             {/* Month Filter */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <select
                 value={selectedMonth || ''}
                 onChange={(e) => setSelectedMonth(e.target.value ? parseInt(e.target.value) : undefined)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 title="Select month to filter expenses"
               >
                 <option value="">All Months</option>
@@ -294,11 +290,11 @@ const History: React.FC = () => {
 
             {/* Category Filter */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 title="Select category to filter expenses"
               >
                 <option value="">All Categories</option>
@@ -311,10 +307,10 @@ const History: React.FC = () => {
 
           {/* Clear Filters */}
           {(selectedYear || selectedMonth || searchTerm || selectedCategory) && (
-            <div className="mt-4">
+            <div className="mt-4 text-right">
               <button
                 onClick={clearFilters}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
               >
                 Clear all filters
               </button>
@@ -324,50 +320,50 @@ const History: React.FC = () => {
 
         {/* Monthly Groups */}
         {filteredGroups.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses found</h3>
-            <p className="text-gray-500">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 md:p-12 text-center">
+            <Calendar className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No expenses found</h3>
+            <p className="text-gray-500 dark:text-gray-400">
               {searchTerm || selectedCategory || selectedYear || selectedMonth
                 ? 'Try adjusting your filters to see more results.'
                 : 'Start adding expenses to see them grouped by month here.'}
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 sm:space-y-8">
             {filteredGroups.map((group) => (
-              <div key={group.year_month} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div key={group.year_month} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 {/* Month Header */}
-                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
+                <div className="bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                         {group.month_name} {group.year}
                       </h2>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {group.expense_count} expense{group.expense_count !== 1 ? 's' : ''}
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                         {formatIndianCurrency(group.total_amount)}
                       </div>
-                      <p className="text-sm text-gray-600">Total</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Expenses List */}
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-800">
                   {group.expenses.map((expense) => (
-                    <div key={expense.id} className="p-6 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
+                    <div key={expense.id} className="p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
                               {expense.title}
                               {expense.title.includes('(Auto-generated)') && (
-                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                   Recurring
                                 </span>
                               )}
@@ -377,27 +373,27 @@ const History: React.FC = () => {
                             </span>
                           </div>
                           
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span className="font-medium text-gray-900">{formatIndianCurrency(expense.amount)}</span>
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium text-gray-900 dark:text-white">{formatIndianCurrency(expense.amount)}</span>
                             <span>{new Date(expense.date).toLocaleDateString()}</span>
                           </div>
                           
                           {expense.description && (
-                            <p className="text-sm text-gray-600 mt-2">{expense.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">{expense.description}</p>
                           )}
                         </div>
                         
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
                             onClick={() => handleEdit(expense)}
-                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             title="Edit expense"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(expense)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                             title="Delete expense"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -414,26 +410,25 @@ const History: React.FC = () => {
 
         {/* Edit Modal */}
         {editingExpense && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Expense</h3>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Expense</h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <input
-                type="text"
-                placeholder="Search expenses..."
-                value={editFormData.title}
-                onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                title="Enter expense title"
-              />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={editFormData.title}
+                    onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    title="Enter expense title"
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
                     <input
                       type="number"
                       min="0"
@@ -441,17 +436,17 @@ const History: React.FC = () => {
                       placeholder="0.00"
                       value={editFormData.amount}
                       onChange={(e) => setEditFormData({ ...editFormData, amount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       title="Enter expense amount"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
                     <select
                       value={editFormData.category}
                       onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       title="Select expense category"
                     >
                       {categories.map(category => (
@@ -462,30 +457,30 @@ const History: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
                   <input
                     type="date"
                     value={editFormData.date}
                     onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     title="Select expense date"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                   <textarea
                     value={editFormData.description}
                     onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
                     rows={3}
                     placeholder="Enter expense description"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     title="Enter expense description"
                   />
                 </div>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   onClick={handleSaveEdit}
                   className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
@@ -494,7 +489,7 @@ const History: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setEditingExpense(null)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Cancel
                 </button>
